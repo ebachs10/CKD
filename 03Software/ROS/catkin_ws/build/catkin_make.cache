@@ -1,0 +1,2 @@
+ckd_no_1000
+-DCATKIN_DEVEL_PREFIX=/home/nvidia/workspace/CKD1/03Software/ROS/catkin_ws/devel -DCMAKE_INSTALL_PREFIX=/home/nvidia/workspace/CKD1/03Software/ROS/catkin_ws/install -G Unix Makefiles

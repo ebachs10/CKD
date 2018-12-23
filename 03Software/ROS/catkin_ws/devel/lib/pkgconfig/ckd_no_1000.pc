@@ -1,0 +1,8 @@
+prefix=/home/nvidia/workspace/CKD1/03Software/ROS/catkin_ws/devel
+
+Name: ckd_no_1000
+Description: Description of ckd_no_1000
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/nvidia/workspace/CKD1/03Software/ROS/catkin_ws/devel/lib 
+Requires: 
