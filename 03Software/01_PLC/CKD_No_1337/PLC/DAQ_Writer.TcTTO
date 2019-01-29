@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <Task Name="DAQ_Writer" Id="{ed9103fb-c166-4cb0-86be-421bdcd165ea}">
+    <!--CycleTime in micro seconds.-->
+    <CycleTime>100000</CycleTime>
+    <Priority>2</Priority>
+    <PouCall>
+      <Name>P_InfluxDatabaseWriter</Name>
+    </PouCall>
+    <TaskFBGuid>{a74deca1-56f0-45cd-82ff-82226cd631b8}</TaskFBGuid>
+    <Fb_init>{6579dbc6-f747-477f-aa29-ac99420fde20}</Fb_init>
+    <Fb_exit>{4fa856ac-215d-4260-95e2-08071a8a50f6}</Fb_exit>
+    <CycleUpdate>{8a0d02e7-f86e-4476-aa68-fef205f41ba1}</CycleUpdate>
+    <PostCycleUpdate>{6656eb15-908c-4294-a84b-2604b926efd8}</PostCycleUpdate>
+  </Task>
+</TcPlcObject>

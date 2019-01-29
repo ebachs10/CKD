@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <DUT Name="E_TcpState" Id="{1379b036-37d1-4531-b595-2536d196b836}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_TcpState :
+(
+	None := 0,
+	Disconnecting,
+	Disconnected,
+	Connecting,	
+	Connected,
+	Sending,
+	SendingByReference,
+	Waiting,
+	Receiving,
+	Received
+) DINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

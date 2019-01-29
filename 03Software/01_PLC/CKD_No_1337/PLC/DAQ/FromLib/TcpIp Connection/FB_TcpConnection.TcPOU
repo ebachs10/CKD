@@ -1,0 +1,845 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="FB_TcpConnection" Id="{3d45db86-fe7a-4540-b3a7-dc04140d5100}" SpecialFunc="None">
+    <Declaration><![CDATA[(* Generic TcpIp Connection  *) 
+FUNCTION_BLOCK FB_TcpConnection
+VAR_INPUT
+	Ip					: T_IPv4Addr; (* IP Adress for TCP/IP Server *)
+	Port 				: UDINT; (* Port To Connect to *)
+	ReplyReadInterval 	: TIME := T#100MS; (* Time for allowing server to start responding [T#100MS]*)
+END_VAR
+VAR_OUTPUT
+	_response 	: FB_StringBuilder;
+END_VAR
+
+VAR
+	_requestAdr		: POINTER TO BYTE;
+	_requestLength	: UDINT; 	
+	
+	_responseBuilder : FB_StringBuilder; 
+	
+	_responseString	: T_MAXSTRING; 
+	_responseReceived	: BOOL; 
+	_handle		: T_HSOCKET; 
+	
+	// ======== Current Connection
+	_connect	: BOOL; 
+	_connected	: BOOL; 
+
+	_lastState		: E_TcpState; 
+	_currentState	: E_TcpState :=  E_TcpState.Disconnected;
+
+	// ======== ErrorString
+	_errorID				: UDINT; 
+	_errorMsg				: T_MAXSTRING; 
+
+	// ======== Internal Stuff
+	_idleTime	: TIME;
+	_timeInState : TIME; 
+	_stateCycles : UDINT;
+	_firstTimeInState : BOOL; 
+	
+	// ======== Optional stuff
+	_AmsNetId	: T_AmsNetID := ''; // Local host
+	_Timeout	: TIME := T#45S; 
+	
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(*
+Eventlog:
+18-08-2018 - JHH - Created
+
+
+
+*)
+
+
+// ========== Initialize Buffers
+_response.Initialize();
+
+UpdateMetrics(	CurrentState 	:= _CurrentState,
+				IdleTime		=> _IdleTime,
+				TimeInState		=> _timeInState,
+				CyclesInState 	=> _stateCycles, 
+				FirstTimeInState => _firstTimeInState); 
+
+_lastState := _currentState;
+CASE _currentState OF
+	// ============== Connect
+		E_TcpState.Connecting:
+			state_Connecting(		Handle			:= _handle,
+									CurrentState	:= _currentState,
+									Ip				:= Ip,
+									Port			:= Port);	
+		
+		E_TcpState.Connected:
+			state_Connected(		Connected		:= _connected); 
+			
+	// ============== Send/Receive	
+		E_TcpState.Sending:
+
+			state_Sending(			RequestAdr		:= _requestAdr,
+									RequestLength	:= _requestLength,
+									ResponseBuilder	:= _responseBuilder,
+									CurrentState	:= _currentState,
+									Handle			:= _handle);
+									
+								
+									
+		E_TcpState.Waiting:
+			state_Waiting(			CurrentState	:= _currentState,
+									WaitTime		:= ReplyReadInterval);
+		
+		E_TcpState.Receiving:
+
+			state_Receiving(		ResponseBuilder := _responseBuilder,
+									ActualResponse		:= _response,
+									CurrentState	:= _currentState,
+									Handle			:= _handle); 
+
+						
+		E_TcpState.Received:
+			state_Received(			CurrentState	:= _currentState); 
+									
+	// ============== DisConnect							
+		E_TcpState.Disconnecting:
+			state_Disconnecting(	Handle			:= _handle,
+									CurrentState	:= _currentState);	
+	
+		E_TcpState.Disconnected:
+			state_Disconnected(		Connected		:= _connected);	
+	
+END_CASE
+
+ 
+//_requestString := _request.ToString;
+
+
+_errorMsg := ErrorIdToString(	ErrorID 		:= _errorID); 
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <Folder Name="Methods" Id="{ea823e1a-d082-42dc-b7a3-2b16559d1185}" />
+    <Folder Name="Properties" Id="{5271c66d-3834-4504-af60-da9710c769c7}" />
+    <Folder Name="states" Id="{d32ea321-c335-46a2-b950-751aae19432d}" />
+    <Folder Name="Utilities" Id="{02681f13-a936-4722-9641-c3c90653d395}" />
+    <Property Name="Busy" Id="{cc2fb24b-f94b-4297-a5fe-e30ff41a5c71}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY Busy : BOOL]]></Declaration>
+      <Get Name="Get" Id="{84d73c8f-ba7d-42a5-b56e-83b5faae2dbc}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Busy := 	_currentState = E_TcpState.Receiving 
+		OR	_currentState = E_TcpState.Sending
+		OR	_currentState = E_TcpState.Waiting; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Connect" Id="{9db01490-a2dd-4726-91a3-be3a88e703a1}" FolderPath="Methods\">
+      <Declaration><![CDATA[METHOD Connect : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _currentState = E_TcpState.Disconnected THEN
+	_currentState := E_TcpState.Connecting; 
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Connected" Id="{2d3b838e-78d5-431c-b507-327f4d68e5e2}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY Connected : BOOL]]></Declaration>
+      <Get Name="Get" Id="{5579ad77-5229-4ae3-99c6-9bec769a8711}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Connected := _connected; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Disconnect" Id="{97063573-256b-4ab0-adaa-68378975c270}" FolderPath="Methods\">
+      <Declaration><![CDATA[METHOD Disconnect : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_currentState := E_TcpState.Disconnecting; ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ErrorIdToString" Id="{10c2a147-9f20-4e79-adae-f9bb276e4728}" FolderPath="Utilities\">
+      <Declaration><![CDATA[METHOD PRIVATE ErrorIdToString : T_MAXSTRING
+VAR_INPUT
+	ErrorID	: UDINT; 
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE ErrorID OF
+	0: 	
+		ErrorIdToString := 'No Error';
+	32769:
+		ErrorIdToString := 'TCP/IP Connection Server: No new sockets can be created';
+	32770:
+		ErrorIdToString := 'TCP/IP Connection Server: Socket handle is invalid';
+	32771:
+		ErrorIdToString := 'TCP/IP Connection Server: TcpIp port listener already exists';
+	32772:
+		ErrorIdToString := 'TCP/IP Connection Server: Client socket is no longer connected with the server.';
+	32773:
+		ErrorIdToString := 'TCP/IP Connection Server: Error was registered in the listener socket.';
+		
+	2147952453:
+		ErrorIdToString	:= 'Win32 Socket: An established connection was aborted BY the software in your host machine.';
+		
+	2147952454:
+		ErrorIdToString	:= 'Win32 Socket: An existing connection was forcibly closed by the remote host..';
+	 
+ELSE
+	ErrorIdToString := CONCAT('Unknown Error: ',TO_STRING(ErrorID));
+
+END_CASE
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="LastErrorMsg" Id="{33834a8e-462b-4b97-8e5c-342a557cef77}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY LastErrorMsg : T_MAXSTRING]]></Declaration>
+      <Get Name="Get" Id="{100f4272-bf66-40da-8b4a-854dbe706f65}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[LastErrorMsg := _errorMsg; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="MaintainConnection" Id="{3bae8bd2-58fd-4151-926f-c10e1cb90010}" FolderPath="Utilities\">
+      <Declaration><![CDATA[METHOD PRIVATE MaintainConnection : BOOL
+VAR_INPUT
+	ServerIp		: T_IPv4Addr;
+	ServerPort 		:  UDINT; 
+	Connect			: BOOL; 
+END_VAR
+
+VAR_OUTPUT
+	Handle				: T_HSOCKET; 
+	ConnectionState		: E_SocketConnectionState; 
+	Connected			: BOOL; 
+	ErrorMsg			: T_MAXSTRING; 
+END_VAR
+
+VAR_INST
+	_fbConnection		: FB_ClientServerConnection; 
+	
+
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fbConnection(	sSrvNetID	:= , 
+				nMode		:= 0, 
+				sRemoteHost	:= ServerIp, 
+				nRemotePort	:= ServerPort, 
+				bEnable		:= Connect, 
+				tReconnect	:= T#45S, 
+				bBusy		=> , 
+				bError		=> , 
+				nErrId		=> , 
+				hSocket		=> Handle, 
+				eState		=> ConnectionState);
+				
+Connected := ConnectionState = 	E_SocketConnectionState.eSOCKET_CONNECTED;	
+ErrorMsg := ErrorIdToString(_fbConnection.nErrId); ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ResetError" Id="{7a928d15-19c3-42cb-8dbf-c5eaaf6c33ba}" FolderPath="Methods\">
+      <Declaration><![CDATA[METHOD ResetError : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_errorId := 0; 
+_errorMsg := ErrorIdToString(_errorId); ]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Response" Id="{6195ca94-6009-4517-bc33-4a2aeab41dd4}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY Response : REFERENCE TO FB_StringBuilder]]></Declaration>
+      <Get Name="Get" Id="{7758283a-650c-4710-92ab-a821a5a930a9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Response REF= _response; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ResponseReceived" Id="{e24c3db4-37c7-4686-a745-14deae2b6137}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY ResponseReceived : BOOL]]></Declaration>
+      <Get Name="Get" Id="{155f97a7-fe52-4ce4-beef-51f6a13eba97}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ResponseReceived := _responseReceived; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Send" Id="{2cf89983-420b-473b-ab12-a784af3488b9}" FolderPath="Methods\">
+      <Declaration><![CDATA[METHOD Send : BOOL
+VAR_INPUT
+	RequestAdr	: POINTER TO BYTE;
+	RequestLength	: UDINT; 
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_responseBuilder.Clear();
+
+_requestAdr	:= RequestAdr;
+_requestLength := RequestLength; 
+
+IF _currentState = E_TcpState.Connected THEN
+	_currentState := E_TcpState.Sending;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="State" Id="{91fc5d01-f365-4bd1-9760-d2758422b266}" FolderPath="Properties\">
+      <Declaration><![CDATA[PROPERTY State : E_TcpState]]></Declaration>
+      <Get Name="Get" Id="{e838e9b8-8127-4fbb-b187-cce9e6633d33}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[State := _currentState; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="state_Connected" Id="{6fbfd44c-4f89-4c4e-b64f-0b24e16b90b8}" FolderPath="states\">
+      <Declaration><![CDATA[METHOD private state_Connected : BOOL
+VAR_IN_OUT
+	Connected		: BOOL; 
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Connected := TRUE; 
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="state_Connecting" Id="{acb82238-2349-4866-a293-6d86b2479460}" FolderPath="states\">
+      <Declaration><![CDATA[METHOD PRIVATE state_Connecting : BOOL
+VAR_INPUT
+	Ip					: T_IPv4Addr; (* IP Adress for TCP/IP Server *)
+	Port 				: UDINT; (* Port To Connect to *)
+END_VAR
+VAR_IN_OUT
+	Handle			: T_HSOCKET;
+	CurrentState	: E_TcpState;		
+END_VAR
+VAR_INST
+	fb				: FB_SocketConnect; 
+	error			: T_MAXSTRING; 
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+fb(	sSrvNetId	:= _AmsNetId, 
+	sRemoteHost	:= Ip, 
+	nRemotePort	:= Port, 
+	bExecute	:= NOT(_firstTimeInState), 
+	tTimeout	:= _Timeout, 
+	bBusy		=> , 
+	bError		=> , 
+	nErrId		=> , 
+	hSocket		=> Handle);
+
+IF fb.bError AND NOT(_firstTimeInState) THEN
+	fb(bExecute := FALSE);
+	error := ErrorIdToString(fb.nErrId); 
+	CurrentState := E_TcpState.Disconnecting;
+
+ELSIF NOT(fb.bBusy) AND NOT(_firstTimeInState) THEN
+	fb(bExecute := FALSE);
+	CurrentState := E_TcpState.Connected;
+END_IF
+
+_errorID := fb.nErrId; ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="state_Disconnected" Id="{cf962620-1626-4b05-a4cc-8cd59d02909e}" FolderPath="states\">
+      <Declaration><![CDATA[METHOD PRIVATE state_Disconnected : BOOL
+VAR_IN_OUT
+	Connected		: BOOL; 
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Connected := FALSE; 
+_connect := FALSE; 
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="state_Disconnecting" Id="{2d3c11da-96f8-4214-b966-d15009d033a1}" FolderPath="states\">
+      <Declaration><![CDATA[METHOD private state_Disconnecting : BOOL
+VAR_IN_OUT
+	Handle			: T_HSOCKET;
+	CurrentState	: E_TcpState;		
+END_VAR
+VAR_INST
+	fb				: FB_SocketClose; 
+	error 			: T_MAXSTRING;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+fb(	sSrvNetId	:= _AmsNetId, 
+	hSocket		:= Handle, 
+	bExecute	:= NOT(_firstTimeInState), 
+	tTimeout	:= _Timeout, 
+	bBusy		=> , 
+	bError		=> , 
+	nErrId		=> );
+
+IF (fb.bError OR NOT(fb.bBusy)) AND NOT(_firstTimeInState) THEN
+	fb(bExecute := FALSE);
+	error := ErrorIdToString(fb.nErrId); 
+	CurrentState := E_TcpState.Disconnected;
+END_IF
+
+_errorID := fb.nErrId; ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="state_Received" Id="{48054237-e681-4146-bede-471942e910b0}" FolderPath="states\">
+      <Declaration><![CDATA[METHOD state_Received : BOOL
+VAR_IN_OUT
+	CurrentState	: E_TcpState; 
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT(_firstTimeInState) THEN
+	CurrentState := E_TcpState.Connected; 
+	
+	_responseString 	:= _response.ToString; 
+	_responseReceived	:= _response.Length > 0;
+
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="state_Receiving" Id="{e363cedc-2259-476b-a296-da630feeb833}" FolderPath="states\">
+      <Declaration><![CDATA[METHOD private state_Receiving : BOOL
+VAR_IN_OUT
+	ResponseBuilder	: FB_StringBuilder; 
+	ActualResponse		: FB_StringBuilder;
+END_VAR
+VAR_IN_OUT
+	Handle			: T_HSOCKET;
+	CurrentState	: E_TcpState;		
+END_VAR
+VAR_INST
+	fb				: FB_SocketReceive; 
+	ErrorID			: UDINT; 
+	TxtReceived		: T_MAXSTRING; 
+	error 			: T_MAXSTRING;
+	buffer			: ARRAY[0..1023] OF BYTE;
+	InBuffer		: UDINT; 
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+fb(
+	sSrvNetId	:= _AmsNetId, 
+	hSocket		:= Handle, 
+	bExecute	:= NOT(_firstTimeInState),
+	cbLen		:= SIZEOF(buffer), //Response.BufferSize-Response.Length, 
+	pDest		:= ADR(buffer), //Response.StringPointer + Response.Length, 
+	tTimeout	:= T#500h, 
+	bBusy		=> , 
+	bError		=> , 
+	nErrId		=> ErrorID, 
+	nRecBytes	=> InBuffer); //BytesReceived);
+
+IF fb.bError AND NOT(_firstTimeInState) THEN
+	fb(bExecute := FALSE);
+	error := ErrorIdToString(fb.nErrId); 
+	CurrentState := E_TcpState.Disconnected;
+
+ELSIF NOT(fb.bBusy) AND NOT(_firstTimeInState) THEN
+	fb(bExecute := FALSE);
+	
+	// ========== Transfer to Response
+	ResponseBuilder.AppendGeneric(ADR(buffer), InBuffer); 
+	
+	
+	
+	
+	IF InBuffer > 0 THEN
+		CurrentState := E_TcpState.Waiting;	// If not all bytes received, read again in "wait" time.
+	ELSE
+		CurrentState := E_TcpState.Received; // If no bytes read, reading is done. 
+		TxtReceived := ResponseBuilder.ToString; 
+		ActualResponse.Clear();
+		ActualResponse.AppendGeneric(ResponseBuilder.StringPointer,ResponseBuilder.Length); 
+	END_IF
+
+END_IF
+
+_errorID := fb.nErrId; ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="state_Sending" Id="{6124260b-37c8-4c96-a691-b0d64d14bc59}" FolderPath="states\">
+      <Declaration><![CDATA[METHOD PRIVATE state_Sending : BOOL
+VAR_INPUT
+	RequestAdr		: POINTER TO BYTE; 
+	RequestLength	: UDINT; 
+END_VAR
+VAR_IN_OUT
+	ResponseBuilder		: FB_StringBuilder;
+	Handle			: T_HSOCKET;
+	CurrentState	: E_TcpState;		
+END_VAR
+
+VAR_INST
+	DebugRequest	: BOOL; 
+	fb				: FB_SocketSend; 
+	ErrorID			: UDINT; 
+	RequestTxt		: T_MAXSTRING;
+	error			: T_MAXSTRING;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+
+fb(
+		sSrvNetId	:= _AmsNetId, 
+		hSocket		:= Handle, 
+		bExecute	:= NOT(_firstTimeInState),
+		cbLen		:= RequestLength, 
+		pSrc		:= RequestAdr, 
+		tTimeout	:= T#500h, 
+		bBusy		=> , 
+		bError		=> , 
+		nErrId		=> ErrorID);
+		
+
+
+IF fb.bError AND NOT(_firstTimeInState) THEN
+	fb(bExecute := FALSE);
+	error := ErrorIdToString(fb.nErrId); 
+	CurrentState := E_TcpState.Disconnected;
+
+ELSIF NOT(fb.bBusy) AND NOT(_firstTimeInState) THEN
+	fb(bExecute := FALSE);
+	ResponseBuilder.Clear(); // Clear response, ready for receiving new response.
+	CurrentState := E_TcpState.Waiting;
+END_IF
+
+
+_errorID := fb.nErrId; ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="state_Waiting" Id="{5b9f7827-0538-49b7-8f60-881a5290512a}" FolderPath="states\">
+      <Declaration><![CDATA[METHOD PRIVATE state_Waiting : BOOL
+VAR_INPUT
+	WaitTime	: TIME; 
+END_VAR
+VAR_IN_OUT
+	CurrentState	: E_TcpState;
+END_VAR
+VAR_INST
+	TimesExecuted : UDINT; 
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF WaitTime < T#5MS THEN
+	WaitTime := T#50MS;
+END_IF
+
+IF _timeInState >= WaitTime THEN
+	TimesExecuted := TimesExecuted + 1; 
+	CurrentState := E_TcpState.Receiving; 
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="UpdateMetrics" Id="{8f62cb38-e43a-4e55-8455-e49872883a19}" FolderPath="Utilities\">
+      <Declaration><![CDATA[METHOD PRIVATE UpdateMetrics : BOOL
+VAR_IN_OUT
+	CurrentState	: E_TcpState; 	
+
+
+END_VAR
+
+VAR_OUTPUT
+	IdleTime	: TIME; 	
+	TimeInState	: TIME; 
+	CyclesInState : UDINT;
+	FirstTimeInState	 : BOOL; 
+	
+END_VAR
+
+VAR_INST
+	_lastState	: E_TcpState; 
+	_IdleTimer	: TON; 
+	_StateTimer	: TON; 
+	_ReceiveTimer : TON;
+	
+	_cycles		: UDINT;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+_IdleTimer(		IN	:= CurrentState = E_TcpState.Connected,
+				PT	:= T#200H,
+				ET	=> IdleTime); 
+
+_StateTimer(	IN	:= CurrentState = _lastState,
+				PT	:= T#1000H,
+				ET	=> TimeInState); 
+				
+_ReceiveTimer(	IN	:= CurrentState = E_TcpState.Receiving OR CurrentState = E_TcpState.Waiting,
+				PT	:= T#2S,	// Timeout for Receiving data
+				ET	=> ); 
+				
+				
+IF CurrentState = _lastState THEN
+	_cycles := _cycles + 1;
+	FirstTimeInState := FALSE;
+ELSE
+	_cycles := 0; 
+	FirstTimeInState := TRUE; 
+END_IF
+
+IF _ReceiveTimer.Q OR _IdleTimer.ET > T#5s THEN
+	CurrentState := E_TcpState.Disconnecting;
+END_IF
+				
+CyclesInState := _cycles; 		
+				
+				
+				
+				
+				
+_lastState := CurrentState; ]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_TcpConnection">
+      <LineId Id="24" Count="0" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="98" Count="0" />
+      <LineId Id="96" Count="1" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="512" Count="0" />
+      <LineId Id="194" Count="2" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="186" Count="3" />
+      <LineId Id="193" Count="0" />
+      <LineId Id="27" Count="2" />
+      <LineId Id="411" Count="0" />
+      <LineId Id="395" Count="0" />
+      <LineId Id="397" Count="3" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="117" Count="0" />
+      <LineId Id="413" Count="0" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="46" Count="0" />
+      <LineId Id="563" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="621" Count="0" />
+      <LineId Id="236" Count="0" />
+      <LineId Id="146" Count="1" />
+      <LineId Id="741" Count="1" />
+      <LineId Id="230" Count="0" />
+      <LineId Id="232" Count="0" />
+      <LineId Id="231" Count="0" />
+      <LineId Id="235" Count="0" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="676" Count="0" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="503" Count="0" />
+      <LineId Id="148" Count="1" />
+      <LineId Id="678" Count="0" />
+      <LineId Id="677" Count="0" />
+      <LineId Id="497" Count="1" />
+      <LineId Id="412" Count="0" />
+      <LineId Id="401" Count="0" />
+      <LineId Id="403" Count="5" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="510" Count="0" />
+      <LineId Id="453" Count="1" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="791" Count="0" />
+      <LineId Id="33" Count="9" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.Busy.Get">
+      <LineId Id="2" Count="0" />
+      <LineId Id="5" Count="1" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.Connect">
+      <LineId Id="20" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="21" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.Connected.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.Disconnect">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.ErrorIdToString">
+      <LineId Id="7" Count="0" />
+      <LineId Id="34" Count="11" />
+      <LineId Id="54" Count="1" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="63" Count="1" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="47" Count="2" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="24" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.LastErrorMsg.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.MaintainConnection">
+      <LineId Id="6" Count="9" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="40" Count="2" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.ResetError">
+      <LineId Id="5" Count="1" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.Response.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.ResponseReceived.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.Send">
+      <LineId Id="16" Count="1" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="11" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.State.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.state_Connected">
+      <LineId Id="29" Count="0" />
+      <LineId Id="28" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.state_Connecting">
+      <LineId Id="110" Count="0" />
+      <LineId Id="160" Count="0" />
+      <LineId Id="162" Count="6" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="182" Count="0" />
+      <LineId Id="75" Count="4" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="81" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.state_Disconnected">
+      <LineId Id="36" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="31" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.state_Disconnecting">
+      <LineId Id="110" Count="0" />
+      <LineId Id="160" Count="0" />
+      <LineId Id="162" Count="4" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="175" Count="0" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="81" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.state_Received">
+      <LineId Id="5" Count="0" />
+      <LineId Id="7" Count="0" />
+      <LineId Id="13" Count="3" />
+      <LineId Id="8" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.state_Receiving">
+      <LineId Id="110" Count="0" />
+      <LineId Id="60" Count="2" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="63" Count="5" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="73" Count="1" />
+      <LineId Id="214" Count="0" />
+      <LineId Id="75" Count="3" />
+      <LineId Id="111" Count="0" />
+      <LineId Id="159" Count="0" />
+      <LineId Id="138" Count="0" />
+      <LineId Id="156" Count="0" />
+      <LineId Id="139" Count="0" />
+      <LineId Id="157" Count="1" />
+      <LineId Id="114" Count="1" />
+      <LineId Id="117" Count="1" />
+      <LineId Id="196" Count="0" />
+      <LineId Id="177" Count="1" />
+      <LineId Id="116" Count="0" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="72" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="81" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.state_Sending">
+      <LineId Id="96" Count="1" />
+      <LineId Id="69" Count="2" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="72" Count="5" />
+      <LineId Id="148" Count="0" />
+      <LineId Id="143" Count="0" />
+      <LineId Id="149" Count="0" />
+      <LineId Id="100" Count="1" />
+      <LineId Id="167" Count="0" />
+      <LineId Id="102" Count="3" />
+      <LineId Id="121" Count="0" />
+      <LineId Id="106" Count="0" />
+      <LineId Id="99" Count="0" />
+      <LineId Id="80" Count="1" />
+      <LineId Id="83" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.state_Waiting">
+      <LineId Id="5" Count="0" />
+      <LineId Id="7" Count="1" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="18" Count="0" />
+      <LineId Id="14" Count="1" />
+    </LineIds>
+    <LineIds Name="FB_TcpConnection.UpdateMetrics">
+      <LineId Id="17" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="24" Count="1" />
+      <LineId Id="51" Count="2" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="117" Count="0" />
+      <LineId Id="119" Count="1" />
+      <LineId Id="118" Count="0" />
+      <LineId Id="54" Count="2" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="94" Count="0" />
+      <LineId Id="70" Count="1" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="122" Count="0" />
+      <LineId Id="124" Count="1" />
+      <LineId Id="57" Count="7" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,654 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="FB_InfluxDataCollector" Id="{a71f184b-9a02-4654-98ba-4a52cac3702c}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_InfluxDataCollector
+VAR
+//Writer
+	_NameValuePairs			: UDINT; 
+	_PointsAdded			: UDINT; 
+	
+// Misc
+	_fbGetSystemTime		: GetSystemTime;
+	_bufferTime				: TIME; 
+	_fbTimer				: TON; 
+END_VAR
+VAR
+	BufferInUse		: DINT := 1; 
+	Buffer1			: ST_InfluxBuffer;
+	Buffer2			: ST_InfluxBuffer;
+END_VAR
+VAR
+	iContentLengthIndex : UDINT; 
+	iContentLengthBegin : UDINT;
+	iContentLengthEnd	: UDINT;
+	iContentLength		: UDINT; 
+	strContentLength	: T_MAXSTRING; 
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Folder Name="AddData" Id="{ea68fe22-3397-43a6-a1ff-07ab3a8835c0}" />
+    <Folder Name="Readers" Id="{237bf7a5-a635-4c79-9e1c-3f078db04593}" />
+    <Method Name="AddBareString" Id="{ba91a045-15a3-4d6a-99a9-56949dce1bce}" FolderPath="AddData\">
+      <Declaration><![CDATA[METHOD AddBareString : BOOL
+VAR_INPUT
+	input : T_MaxString; 
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[DataString.Append(input);]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AddBool" Id="{5d46e349-dc2d-44d3-8927-e2979f1e0acb}" FolderPath="AddData\">
+      <Declaration><![CDATA[METHOD PUBLIC AddBool : BOOL
+VAR_INPUT
+	Name 	: T_MaxString;
+	Value 	: BOOL; 
+END_VAR
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[AddName(Name);
+IF Value THEN
+	DataString.Append('1');
+ELSE
+	DataString.Append('0');
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AddData" Id="{05a2f8be-eda7-4ecf-92da-a21b2cbb1345}" FolderPath="AddData\">
+      <Declaration><![CDATA[METHOD PUBLIC AddData : BOOL
+VAR_INPUT
+	Name 	: T_MaxString;
+	Value 	: T_MaxString; 
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[AddName(Name);
+DataString.Append(Value);
+
+
+_NameValuePairs := _NameValuePairs + 1; ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AddLreal" Id="{d2e68d78-7f47-428e-9308-99894432aa5d}" FolderPath="AddData\">
+      <Declaration><![CDATA[METHOD AddLreal : BOOL
+VAR_INPUT
+	Name 	: T_MaxString;
+	Value 	: LREAL; 
+END_VAR
+VAR_INST
+	json	: FB_JsonSaxWriter; 
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[AddName(Name);
+
+json.ResetDocument(); 
+json.AddLreal(Value); 
+DataString.Append(json.GetDocument());
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AddName" Id="{a8117dd5-276c-4f43-aea1-6542fb834223}">
+      <Declaration><![CDATA[METHOD PRIVATE AddName : BOOL
+VAR_INPUT
+	Name 	: T_MaxString;
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _NameValuePairs = 0 THEN
+	DataString.Append(' ');
+ELSE
+	DataString.Append(',');
+END_IF
+DataString.Append(Name);
+DataString.Append('=');
+
+_NameValuePairs := _NameValuePairs + 1; ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AddTag" Id="{65e3cdc4-5064-4ba2-aac6-5654fd567257}">
+      <Declaration><![CDATA[METHOD AddTag : BOOL
+VAR_INPUT
+	Key		: T_MAXSTRING;
+	Value	: T_MAXSTRING; 
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Datastring.Append(',');
+Datastring.Append(Key);
+DataString.Append('=');
+DataString.Append(Value); ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AddTimeStamp" Id="{5fc5c456-6a56-477c-a211-1de1f208ce67}">
+      <Declaration><![CDATA[METHOD AddTimeStamp : BOOL; 
+
+VAR
+	b : BOOL; 
+	SizeLimit : UDINT := 10000000; //10 MB
+END_VAR
+VAR_OUTPUT
+	ActualBufferTime : TIME; 
+END_VAR
+VAR_INST
+	_actualBufferTime : TIME; 
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_PointsAdded := _PointsAdded + 1;
+
+DataString.Append(' ');
+DataString.Append(ULINT_TO_STRING(CurrentTimeStamp));
+DataString.Append('$N');
+
+_fbTimer(	IN := TRUE,
+			PT := _bufferTime);
+			
+IF _fbTimer.Q OR BufferUsed >= 0.9 OR DataString.Length > SizeLimit THEN
+	_actualBufferTime := _fbTimer.ET;
+
+	// ======= Add HTTP Content Length
+	
+		iContentLengthEnd := DataString.Length; 
+		
+		// Calcualte ContentLength 
+		iContentLength := iContentLengthEnd - iContentLengthBegin; 
+		strContentLength := TO_STRING(iContentLength); 
+		
+		// Add content Length to HTTP Header
+		memcpy(DataString.StringPointer + iContentLengthIndex, ADR(strContentLength), LEN(strContentLength));
+
+
+	SetBufferAsReady();
+	SwitchBuffer(); 
+	Reset(); 
+	SetBufferAsNotReady();
+	
+	
+	
+	
+END_IF
+
+ActualBufferTime := _actualBufferTime; ]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="BufferOverflow" Id="{90374bc4-d31e-4696-846e-c9442a836b3d}" FolderPath="Readers\">
+      <Declaration><![CDATA[PROPERTY BufferOverflow : BOOL]]></Declaration>
+      <Get Name="Get" Id="{959a4704-8204-42bd-98ef-e0eb796bea66}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[BufferOverflow := DataString.Length = DataString.BufferSize;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="BufferUsed" Id="{02b06849-98b5-4085-891f-17c1ab610e86}" FolderPath="Readers\">
+      <Declaration><![CDATA[PROPERTY BufferUsed : LREAL]]></Declaration>
+      <Get Name="Get" Id="{1dc9a250-fa2c-4781-b160-1687c68e35fa}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[BufferUsed := UDINT_TO_LREAL(DataString.Length) / UDINT_TO_LREAL(DataString.BufferSize);]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="CurrentTimeStamp" Id="{975d5645-35ae-4691-b5f1-94d8544a01d1}" FolderPath="Readers\">
+      <Declaration><![CDATA[PROPERTY PROTECTED CurrentTimeStamp : ULINT; ]]></Declaration>
+      <Get Name="Get" Id="{71ffb008-1e99-448c-983c-60eace42636a}">
+        <Declaration><![CDATA[VAR
+	normTime	: T_FILETIME;
+
+	dcTime	: T_DCTIME64; 	
+
+	timeLoDW				: ULINT;
+	timeHiDW				: ULINT;
+	ulTime					: ULINT;
+	unixTimeFileTimeDiff	: ULINT;
+
+	
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[(****************************************************************************************************************
+
+In TwinCAT we get accure timestamp  via GetSystemTime() function block, but it returns so called "filetime"
+	filemtime is count of "100 nanoseconds" since 1.1.1601.
+	
+InfluxDb uses Unix time stamp with accuracy of 1ns. 
+	Unix time stamp is seconds since 1.1.1970. 
+
+1.1.1970 - 1.1.1601 in "100 nanoseconds" is 116444736000000000	
+*******************************************************************************************************************)
+
+unixTimeFileTimeDiff := 116444736000000000; 
+_fbGetSystemTime();
+timeHiDW 	:= _fbGetSystemTime.timeHiDW;
+timeLoDW 	:= _fbGetSystemTime.timeLoDW; 
+
+
+normTime := DCTIME64_TO_FILETIME(F_GETCURDCTASKTIME64()); 
+
+normTime.dwHighDateTime := normTime.dwHighDateTime;
+normTime.dwLowDateTime := normTime.dwLowDateTime;
+
+
+ulTime 	:= timeHiDW * 16#FFFFFFFF + timeLoDW; 	// "100 nanoseconds" since 1.1.1601.
+
+//ulTime 	:= normTime.dwHighDateTime * 16#FFFFFFFF + normTime.dwLowDateTime; 	// "100 nanoseconds" since 1.1.1601.
+
+ulTime 	:= ulTime - unixTimeFileTimeDiff;		// "100 nanoseconds" since 1.1.1970.
+CurrentTimeStamp 	:= ulTime * 100;						// nanoseconds since 1.1.1970.
+
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="DataLength" Id="{9bd9f3c9-b4ad-4e70-b5c6-ad0c75f41afa}" FolderPath="Readers\">
+      <Declaration><![CDATA[PROPERTY DataLength : UDINT]]></Declaration>
+      <Get Name="Get" Id="{dc21e755-545c-4f85-ad16-3cb541445197}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[DataLength := DataString.Length;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="DataString" Id="{91c881f1-07e2-4f68-bc70-8eb2db59f9ef}">
+      <Declaration><![CDATA[PROPERTY DataString : REFERENCE TO FB_STRINGBUILDER]]></Declaration>
+      <Get Name="Get" Id="{13214d5e-3d12-49d2-8c19-8cd73f2733e3}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[DataString REF= GetData(BufferInUse); 
+
+
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="GetData" Id="{54425601-3cd3-40e9-8d57-b9fcfe7e8740}">
+      <Declaration><![CDATA[METHOD GetData : REFERENCE TO FB_STRINGBUILDER
+VAR_INPUT
+	BufferNumber : DINT; 
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+IF BufferNumber = 1 THEN
+	GetData REF= Buffer1.Data;
+ELSIF BufferNumber = 2 THEN
+	GetDAta REF= Buffer2.Data; 
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="HttpRequest" Id="{9916f37a-1bb2-4646-9f5c-4937c678118f}" FolderPath="Readers\">
+      <Declaration><![CDATA[PROPERTY HttpRequest : T_MAXSTRING]]></Declaration>
+      <Get Name="Get" Id="{c15334e2-57d7-40be-80fe-ed19aba6f00b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[HttpRequest := DataString.ToString;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Initialize" Id="{5a72f94b-4716-4169-b2b7-f87e326c290a}">
+      <Declaration><![CDATA[METHOD Initialize : BOOL
+VAR_INPUT
+	HostName 		: T_MAXSTRING;
+	Database 		: T_MAXSTRING;  
+	Measurement 	: T_MAXSTRING; 
+END_VAR
+VAR
+	MaxBufferTime : TIME := T#2s; 
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF DataString.Length = 0 THEN
+	// ============ Build HTTP Header
+	DataString.Append('POST /write?db=');
+	DataString.Append(Database);
+	DataString.AppendLine(' HTTP/1.1');
+	
+	DataString.Append('Host: ');
+	DataString.AppendLine(HostName);
+	DataString.AppendLine('User-Agent: TwinCAT HttpClient');
+	DataString.AppendLine('Content-Type: application/x-www-form-urlencoded');
+	
+	DataString.Append('Content-Length: ');
+	iContentLengthIndex := DataString.Length; 
+	
+	DataString.Append('                    '); // Add 10 spaces for adding ContentLength later;
+	DataString.AppendLine('');
+	DataString.AppendLine(''); 	// <<--- End of HTTP Header
+	
+	iContentLengthBegin := DataString.Length; 
+END_IF
+
+	
+// ========== Add host to influx measurement
+SetupCollection(Measurement, HostName, MaxBufferTime); ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="IsReadyToSend" Id="{4164ae51-50fc-499b-ad53-a8575b688b1d}">
+      <Declaration><![CDATA[METHOD IsReadyToSend : BOOL
+VAR_INPUT
+	BufferNumber : DINT; 
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF BufferNumber = 1 THEN
+	IsReadyToSend := Buffer1.ReadyToSend; 
+ELSIF BufferNumber = 2 THEN
+	IsReadyToSend := Buffer2.ReadyToSend;  
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="PointsAdded" Id="{f48a1630-c268-4098-99bd-e79cbf1d8421}" FolderPath="Readers\">
+      <Declaration><![CDATA[PROPERTY PointsAdded : UDINT]]></Declaration>
+      <Get Name="Get" Id="{f7fbf95f-52ee-43ef-8400-7e3ad39b2aee}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[PointsAdded := _PointsAdded; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ReadyToSend" Id="{789c4ad4-1b4d-4fbf-ab59-ca430283bbee}" FolderPath="Readers\">
+      <Declaration><![CDATA[PROPERTY ReadyToSend : BOOL]]></Declaration>
+      <Get Name="Get" Id="{e7768124-f9ca-4a27-a5fc-2335f127ea42}">
+        <Declaration><![CDATA[]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ReadyToSend := _fbTimer.Q;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Reset" Id="{45ea921a-0ad0-4178-98a3-7d5d1d544581}">
+      <Declaration><![CDATA[METHOD Reset : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fbTimer(IN := FALSE);
+DataString.Clear();
+_PointsAdded := 0;]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetBufferAsNotReady" Id="{aae55f2b-bac9-4e49-a801-dc3fff39de9a}">
+      <Declaration><![CDATA[METHOD PRIVATE SetBufferAsNotReady : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+// ========== Current
+IF BufferInUse = 1 THEN
+	Buffer1.ReadyToSend := FALSE;
+ELSIF BufferInUse = 2 THEN
+	Buffer2.ReadyToSend := FALSE;
+END_IF
+	
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetBufferAsReady" Id="{cb9f79d2-4843-4653-90f6-ae7ce4fe5e87}">
+      <Declaration><![CDATA[METHOD PRIVATE SetBufferAsReady : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+// ========== Current
+IF BufferInUse = 1 THEN
+	Buffer1.ReadyToSend := TRUE;
+ELSIF BufferInUse = 2 THEN
+	Buffer2.ReadyToSend := TRUE;
+END_IF
+	
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetupCollection" Id="{7c34a347-d4d6-476e-82b6-0e0875321ae8}">
+      <Declaration><![CDATA[METHOD SetupCollection : BOOL; 
+VAR_INPUT
+	Measurement				: T_MaxString;
+	ComputerName			: T_MaxString;
+	BufferTime				: TIME; 
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[DataString.Append(Measurement);
+
+AddTag('Source',ComputerName);
+
+
+_bufferTime := BufferTime; 
+
+
+_NameValuePairs := 0; ]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SwitchBuffer" Id="{5532b8ea-9fe3-421f-9909-0783735cbd11}">
+      <Declaration><![CDATA[METHOD PRIVATE SwitchBuffer : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF BufferInUse = 1 THEN
+	BufferInUse := 2; 
+ELSE
+	BufferInUSe := 1; 
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="TagsAdded" Id="{ab2ece5d-3852-4c6c-9656-372315bc1d78}" FolderPath="Readers\">
+      <Declaration><![CDATA[PROPERTY TagsAdded : UDINT]]></Declaration>
+      <Get Name="Get" Id="{f67fa582-3934-41ef-8e48-b580a3512a00}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[TagsAdded := _NameValuePairs; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="TimeElapsed" Id="{2746c412-a6da-4127-862d-3c6acb2a8e86}" FolderPath="Readers\">
+      <Declaration><![CDATA[PROPERTY TimeElapsed : TIME]]></Declaration>
+      <Get Name="Get" Id="{ba2430b7-6d5e-42c2-a8c9-c47affd35eee}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[TimeElapsed := _fbTimer.ET; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="TimeRemaining" Id="{c745e445-2ec8-4afb-a2c6-d5eeb0f701a0}" FolderPath="Readers\">
+      <Declaration><![CDATA[PROPERTY TimeRemaining : TIME]]></Declaration>
+      <Get Name="Get" Id="{9abba83f-6e81-4fb3-9c1c-37385c77e3ff}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[TimeRemaining := _bufferTime - TimeElapsed; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ToString" Id="{fd8832cf-efc0-4c7d-aab0-6a1f576ce2c3}" FolderPath="Readers\">
+      <Declaration><![CDATA[PROPERTY ToString : T_MAXSTRING]]></Declaration>
+      <Get Name="Get" Id="{2c6ddb26-7518-4d41-8521-50a3871b2256}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ToString := DataString.ToString; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="FB_InfluxDataCollector">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.AddBareString">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.AddBool">
+      <LineId Id="3" Count="3" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.AddData">
+      <LineId Id="3" Count="4" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.AddLreal">
+      <LineId Id="27" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="34" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.AddName">
+      <LineId Id="3" Count="7" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.AddTag">
+      <LineId Id="10" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="1" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.AddTimeStamp">
+      <LineId Id="19" Count="0" />
+      <LineId Id="3" Count="3" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="10" Count="1" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="55" Count="0" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="76" Count="0" />
+      <LineId Id="68" Count="6" />
+      <LineId Id="57" Count="1" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="41" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="48" Count="2" />
+      <LineId Id="52" Count="2" />
+      <LineId Id="42" Count="0" />
+      <LineId Id="89" Count="0" />
+      <LineId Id="88" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.BufferOverflow.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.BufferUsed.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.CurrentTimeStamp.Get">
+      <LineId Id="3" Count="11" />
+      <LineId Id="72" Count="3" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="66" Count="3" />
+      <LineId Id="18" Count="1" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="51" Count="0" />
+      <LineId Id="50" Count="0" />
+      <LineId Id="20" Count="1" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.DataLength.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.DataString.Get">
+      <LineId Id="5" Count="1" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.GetData">
+      <LineId Id="7" Count="1" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="9" Count="1" />
+      <LineId Id="12" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.HttpRequest.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.Initialize">
+      <LineId Id="5" Count="0" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="37" Count="15" />
+      <LineId Id="6" Count="1" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="8" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="35" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.IsReadyToSend">
+      <LineId Id="8" Count="3" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.PointsAdded.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.ReadyToSend.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.Reset">
+      <LineId Id="9" Count="0" />
+      <LineId Id="7" Count="1" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.SetBufferAsNotReady">
+      <LineId Id="12" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="17" Count="3" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="13" Count="1" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.SetBufferAsReady">
+      <LineId Id="12" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="17" Count="3" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="13" Count="1" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.SetupCollection">
+      <LineId Id="41" Count="0" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="31" Count="1" />
+      <LineId Id="30" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.SwitchBuffer">
+      <LineId Id="5" Count="1" />
+      <LineId Id="8" Count="1" />
+      <LineId Id="7" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.TagsAdded.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.TimeElapsed.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.TimeRemaining.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxDataCollector.ToString.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <DUT Name="ST_NumberInString" Id="{1804e236-a4cb-494a-8b21-b25486cfcf60}">
+    <Declaration><![CDATA[TYPE ST_NumberInString :
+STRUCT
+	StartIndex : DINT;
+	EndIndex	: DINT; 
+	Length		: DINT;
+	Txt			: T_MAXSTRING;
+	Value		: LREAL; 	
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

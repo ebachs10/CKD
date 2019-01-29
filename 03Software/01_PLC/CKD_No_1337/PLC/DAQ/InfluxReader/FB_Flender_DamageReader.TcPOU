@@ -1,0 +1,166 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="FB_Flender_DamageReader" Id="{7ffb4158-7733-41f2-87da-51bcad9e2179}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_Flender_DamageReader
+VAR_INPUT
+	TimeOffset 		: T_MAXSTRING; 
+	ReadInterval 	: TIME := T#1M; 
+	Ip				: T_IPv4Addr := '127.0.0.1'; 
+	
+END_VAR
+VAR
+	iTest 	: UDINT; 
+	
+	Timer : TON; 
+	bRead : BOOL; 
+	
+	Tags 	: ARRAY[0..50] OF T_MAXSTRING;
+	Values 	: ARRAY[0..50] OF LREAL; 
+	
+	reader	: FB_InfluxReader; 
+	CurrentState : 	E_InfluxReaderState;
+END_VAR
+VAR_IN_OUT
+	Dmg_Foundation 	: LREAL;
+	Dmg_Footplates 	: LREAL;
+	Dmg_MBS			: LREAL;	
+	Dmg_LU1			: LREAL; 
+	Dmg_LU2			: LREAL; 
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[iTest := iTest + 1;
+
+Timer( 	IN 	:= NOT(Timer.Q),
+		PT 	:= ReadInterval,
+		Q	=> bRead); 
+
+IF bRead THEN
+	bRead := FALSE;
+	reader.ReadValues();
+END_IF
+// ========= Setup Values
+	Tags[0] := 'General_Foundation_Lu1';
+	Tags[1] := 'General_Foundation_Lu2';
+	
+	Tags[2] := 'General_Footplates_Lu1';
+	Tags[3] := 'General_Footplates_Lu2';
+	
+	Tags[4] := 'General_MBS_Lu1';
+	Tags[5] := 'General_MBS_Lu2';
+	
+	Tags[6] := 'General_Platform_Lu1';
+	Tags[7] := 'General_Platform_Lu2';
+
+// ======== Run Reader
+	reader(	Ip					:= Ip, 
+			Port				:= 8086, 
+			ReplyReadInterval	:= T#200MS, 
+			InfluxDatabase		:= 'RD_Damage', 
+			InfluxMeasurement	:= 'DamageCalculation', 
+			ValuesToFind		:= 8, 
+			ValueNames			:= Tags,
+			TimeOffset			:= TimeOffset,
+			ValuesRead			=> Values,
+			CurrentState		=> CurrentState);
+		
+		
+// ======= Output Values
+	Dmg_Foundation 	:= UpdateCurrentValue(Dmg_Foundation, Values[0], Values[1]);
+	Dmg_Footplates 	:= UpdateCurrentValue(Dmg_Footplates, Values[2], Values[3]);
+	Dmg_MBS			:= UpdateCurrentValue(Dmg_MBS, Values[4], Values[5]); 
+	Dmg_LU1			:= UpdateCurrentValue(Dmg_LU1, Values[6], 0);
+	Dmg_LU2			:= UpdateCurrentValue(Dmg_LU1, Values[7], 0);
+		
+		
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <Method Name="UpdateCurrentValue" Id="{f14b5143-d7f5-4427-b156-9f717fbd18e4}">
+      <Declaration><![CDATA[METHOD PRIVATE UpdateCurrentValue : LREAL
+VAR_INPUT
+	CurrentValue : LREAL;
+	Lu1Value	: LREAL;
+	Lu2Value 	: LREAL; 
+END_VAR
+VAR
+	newestMaxValue : LREAL; 
+	outputValue : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+
+newestMaxValue := MAX(Lu1Value, Lu2Value);
+
+
+outputValue := MAX(CurrentValue, newestMaxValue); 
+
+UpdateCurrentValue := outputValue; 
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_Flender_DamageReader">
+      <LineId Id="605" Count="0" />
+      <LineId Id="864" Count="1" />
+      <LineId Id="867" Count="1" />
+      <LineId Id="784" Count="0" />
+      <LineId Id="783" Count="0" />
+      <LineId Id="785" Count="0" />
+      <LineId Id="788" Count="0" />
+      <LineId Id="786" Count="0" />
+      <LineId Id="801" Count="0" />
+      <LineId Id="800" Count="0" />
+      <LineId Id="802" Count="0" />
+      <LineId Id="837" Count="0" />
+      <LineId Id="832" Count="0" />
+      <LineId Id="831" Count="0" />
+      <LineId Id="838" Count="0" />
+      <LineId Id="834" Count="0" />
+      <LineId Id="833" Count="0" />
+      <LineId Id="839" Count="0" />
+      <LineId Id="836" Count="0" />
+      <LineId Id="835" Count="0" />
+      <LineId Id="803" Count="0" />
+      <LineId Id="776" Count="0" />
+      <LineId Id="789" Count="0" />
+      <LineId Id="791" Count="5" />
+      <LineId Id="856" Count="0" />
+      <LineId Id="777" Count="0" />
+      <LineId Id="817" Count="0" />
+      <LineId Id="853" Count="1" />
+      <LineId Id="857" Count="0" />
+      <LineId Id="855" Count="0" />
+      <LineId Id="843" Count="0" />
+      <LineId Id="841" Count="0" />
+      <LineId Id="845" Count="0" />
+      <LineId Id="898" Count="0" />
+      <LineId Id="775" Count="0" />
+      <LineId Id="842" Count="0" />
+      <LineId Id="659" Count="4" />
+      <LineId Id="65" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_Flender_DamageReader.UpdateCurrentValue">
+      <LineId Id="11" Count="1" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="24" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="28" Count="0" />
+      <LineId Id="15" Count="8" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

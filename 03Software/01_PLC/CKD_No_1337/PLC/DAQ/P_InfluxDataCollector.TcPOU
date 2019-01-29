@@ -1,0 +1,214 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="P_InfluxDataCollector" Id="{5890daa8-c4a5-4cdf-a905-3dfb235d7713}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_InfluxDataCollector
+VAR 
+	Data : REFERENCE TO ST_DATA := P_UpdateDAQ.DataDaq;  
+	Tick : LREAL; 
+	ActualBufferTime : TIME; 
+	
+	InfluxData : FB_InfluxDataCollector; 
+
+	Timer1Hz 	: TON; 
+	Timer10Hz 	: TON; 
+	Timer100Hz 	: TON; 	
+
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[Tick := Tick + 1;
+RunTimers(); 
+
+// ========= Initialize Data
+	InfluxData.Initialize( 	HostName 		:= 'TLU',			// <<---- 	Change to Descriptive MachinePLC name, eg: MachinePLC_TLU 
+							Database 		:= 'RD',			// <<---- 	Change to Database name. Needs to be setup beforehand.
+							Measurement 	:= 'FlenderB2B');	// <<---- 	Measurentname in database. Eg: LORCHALT
+// ========= Add Data tags.
+// These are written to each "point" i.e. for each ms.
+// Add eg: Current State of TestBench - for easy search later on
+															
+	//Data.AddTag('State','Default');						
+
+// ========= Add Actual Data
+
+	InfluxData.AddLreal('Tick', Tick);
+
+// ======== 1 Hz Data
+	IF Time_1Hz THEN
+		InfluxData.AddLreal('Test1Hz', 1);	
+	
+		InfluxAddData_1Hz(		Data 			:= Data,
+								DataCollector 	:=  InfluxData); 	
+						
+	END_IF
+	
+// ======== 10 Hz Data
+	IF Time_10Hz THEN
+		InfluxData.AddLreal('Test10Hz', 10);
+	
+		InfluxAddData_10Hz(	Data 			:= Data,
+								DataCollector 	:=  InfluxData); 		
+		
+	END_IF
+
+// ======== 100 Hz Data
+	IF Time_100Hz THEN
+		InfluxData.AddLreal('Test100Hz', 100);
+	
+		InfluxAddData_100Hz(	Data 			:= Data,
+								DataCollector 	:=  InfluxData); 
+
+		InfluxAddData_1000Hz(	Data 			:= Data,
+								DataCollector 	:=  InfluxData); 
+	
+								
+	END_IF
+
+
+// =========== Add TimeStamp and start new "point"
+InfluxData.AddTimeStamp(ActualBufferTime => ActualBufferTime); 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ResetTimersIfDone(); ]]></ST>
+    </Implementation>
+    <Method Name="ResetTimersIfDone" Id="{961ce8e5-b526-4f59-bf7a-6a7c37564e66}">
+      <Declaration><![CDATA[METHOD ResetTimersIfDone : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF Timer1Hz.Q THEN
+	Timer1Hz(IN := FALSE); 
+	Timer1Hz(IN := TRUE); 
+
+END_IF
+IF Timer10Hz.Q THEN
+	Timer10Hz(IN := FALSE); 
+	Timer10Hz(IN := TRUE); 
+	
+
+END_IF
+IF Timer100Hz.Q THEN
+	Timer100Hz(IN := FALSE); 
+	Timer100Hz(IN := TRUE); 
+	
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="RunTimers" Id="{6e2b8f82-2805-4145-9c6b-f3dcfa4c82bb}">
+      <Declaration><![CDATA[METHOD RunTimers : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Timer1Hz(	IN := TRUE, PT := T#1S		); 
+Timer10Hz(	IN := TRUE, PT := T#100MS	); 
+Timer100Hz(	IN := TRUE, PT := T#10MS	); ]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Time_100Hz" Id="{a94ea9fd-eea9-40d1-bc5f-e9174e0989ab}">
+      <Declaration><![CDATA[PROPERTY Time_100Hz : BOOL]]></Declaration>
+      <Get Name="Get" Id="{7871c46d-dc5c-4542-9256-e2a59dd9f15b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Time_100Hz := Timer100Hz.Q; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Time_10Hz" Id="{9fdde1d8-45d3-4afc-85b5-fbefe968ea8b}">
+      <Declaration><![CDATA[PROPERTY Time_10Hz : BOOL]]></Declaration>
+      <Get Name="Get" Id="{fecd4283-c36b-4303-a2dd-2adb5c157d15}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Time_10Hz := Timer10Hz.Q; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="Time_1Hz" Id="{d11ea6bf-5130-4225-b2bb-274eeedeb585}">
+      <Declaration><![CDATA[PROPERTY Time_1Hz : BOOL]]></Declaration>
+      <Get Name="Get" Id="{0685c72b-5e74-4d07-bff6-eb6598f00475}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Time_1Hz := Timer1Hz.Q; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="P_InfluxDataCollector">
+      <LineId Id="31" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="50" Count="3" />
+      <LineId Id="59" Count="1" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="102" Count="1" />
+      <LineId Id="101" Count="0" />
+      <LineId Id="68" Count="1" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="158" Count="0" />
+      <LineId Id="157" Count="0" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="178" Count="0" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="104" Count="0" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="177" Count="0" />
+      <LineId Id="175" Count="1" />
+      <LineId Id="80" Count="0" />
+      <LineId Id="105" Count="0" />
+      <LineId Id="83" Count="0" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="87" Count="1" />
+      <LineId Id="174" Count="0" />
+      <LineId Id="172" Count="1" />
+      <LineId Id="117" Count="0" />
+      <LineId Id="119" Count="0" />
+      <LineId Id="86" Count="0" />
+      <LineId Id="171" Count="0" />
+      <LineId Id="85" Count="0" />
+      <LineId Id="72" Count="1" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="89" Count="0" />
+      <LineId Id="35" Count="14" />
+      <LineId Id="32" Count="0" />
+    </LineIds>
+    <LineIds Name="P_InfluxDataCollector.ResetTimersIfDone">
+      <LineId Id="6" Count="2" />
+      <LineId Id="10" Count="11" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="P_InfluxDataCollector.RunTimers">
+      <LineId Id="6" Count="1" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="P_InfluxDataCollector.Time_100Hz.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="P_InfluxDataCollector.Time_10Hz.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="P_InfluxDataCollector.Time_1Hz.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

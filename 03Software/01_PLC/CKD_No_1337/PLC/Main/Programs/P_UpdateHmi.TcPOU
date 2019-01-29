@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="P_UpdateHmi" Id="{309727f5-7b51-4980-a3c1-d7ca648e43da}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_UpdateHmi
+VAR_IN_OUT
+	Data		: ST_DATA;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[HmiCom.ToHmi.Data	:= Data;]]></ST>
+    </Implementation>
+    <LineIds Name="P_UpdateHmi">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

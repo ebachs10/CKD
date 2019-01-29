@@ -1,0 +1,258 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FileVersion>1.0.0.0</FileVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{3b916c26-4bca-4550-864a-991d8753dd8e}</ProjectGuid>
+    <SubObjectsSortedByName>True</SubObjectsSortedByName>
+    <Name>PLC</Name>
+    <ProgramVersion>3.1.4022.3</ProgramVersion>
+    <Application>{a02b25c8-bbcd-4cf0-aceb-fc087d79a45f}</Application>
+    <TypeSystem>{e8460fcb-c704-4104-916a-d4bb7e7364e8}</TypeSystem>
+    <Implicit_Task_Info>{67a61f87-71d1-40c6-b1da-e703d21a8437}</Implicit_Task_Info>
+    <Implicit_KindOfTask>{2416ab00-2965-4df6-9ca9-58d5be19c733}</Implicit_KindOfTask>
+    <Implicit_Jitter_Distribution>{464e1417-8154-4e15-94ad-d7ef2e3eca66}</Implicit_Jitter_Distribution>
+    <LibraryReferences>{0735a969-e4b1-4f03-95ae-3176e7698ac6}</LibraryReferences>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="DAQ\FromLib\Influxdb\Reader\E_InfluxReaderState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\FromLib\Influxdb\Reader\FB_InfluxReader.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\FromLib\Influxdb\Sender\FB_InfluxDataCollector.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\FromLib\Influxdb\Sender\FB_InfluxDataSender.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\FromLib\Influxdb\Utils\ST_InfluxBuffer.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\FromLib\StringBuilder\FB_StringBuilder.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\FromLib\TcpIp Connection\E_TcpState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\FromLib\TcpIp Connection\FB_TcpConnection.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\InfluxAddData_1000Hz.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\InfluxAddData_100Hz.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\InfluxAddData_10Hz.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\InfluxAddData_1Hz.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\InfluxReader\ExtractValuesFromInflux\fcnExtractInfluxData.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\InfluxReader\ExtractValuesFromInflux\ST_NumberInString.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\InfluxReader\FB_Flender_DamageReader.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\InfluxReader\P_FlenderGetDamage.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\P_InfluxDatabaseWriter.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ\P_InfluxDataCollector.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ_Collector.TcTTO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DAQ_Writer.TcTTO">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="GVLs\HmiCom.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="GVLs\PersistentVariables.TcGVL">
+      <SubType>Code</SubType>
+      <LinkAlways>true</LinkAlways>
+    </Compile>
+    <Compile Include="HMI\ST_FROM_HMI.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HMI\ST_GUI_HMI.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HMI\ST_HOUR_COUNTERS.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HMI\ST_PARAMETERS_HMI.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HMI\ST_TO_HMI.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Interfaces\JetsonTx2\ST_JetsonTx2.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Interfaces\Sick\ST_SICK.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MAIN.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Main\Enumerators\E_EmulatedState.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Main\Programs\P_UpdateDAQ.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Main\Programs\P_UpdateHmi.TcPOU">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Main\Structures\GPS\ST_GPS.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Main\Structures\GPS\ST_GPS_CALCULATIONS.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Main\Structures\GPS\ST_GPS_INPUTS.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Main\Structures\GPS\ST_GPS_OUTPUTS.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Main\Structures\ST_DATA.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Main\Structures\ST_PlcTiming.TcDUT">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="PlcTask.TcTTO">
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DAQ\FromLib" />
+    <Folder Include="DAQ\FromLib\Influxdb" />
+    <Folder Include="DAQ\FromLib\Influxdb\Reader" />
+    <Folder Include="DAQ\FromLib\Influxdb\Sender" />
+    <Folder Include="DAQ\FromLib\Influxdb\Utils" />
+    <Folder Include="DAQ\FromLib\StringBuilder" />
+    <Folder Include="DAQ\FromLib\TcpIp Connection" />
+    <Folder Include="DAQ\InfluxReader">
+      <ExcludeFromBuild>true</ExcludeFromBuild>
+    </Folder>
+    <Folder Include="DAQ\InfluxReader\ExtractValuesFromInflux" />
+    <Folder Include="DUTs" />
+    <Folder Include="GVLs" />
+    <Folder Include="HMI" />
+    <Folder Include="DAQ" />
+    <Folder Include="Interfaces" />
+    <Folder Include="GeneralFunctions" />
+    <Folder Include="GeneralStructuresAndEnumerators" />
+    <Folder Include="DataStructure" />
+    <Folder Include="Interfaces\JetsonTx2" />
+    <Folder Include="Interfaces\Sick" />
+    <Folder Include="Main" />
+    <Folder Include="Main\Enumerators" />
+    <Folder Include="Main\Functions" />
+    <Folder Include="Main\FunctionBlocks" />
+    <Folder Include="Main\Programs" />
+    <Folder Include="Main\Structures" />
+    <Folder Include="Main\Structures\GPS" />
+    <Folder Include="StateMachines" />
+    <Folder Include="VISUs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PlaceholderReference Include="Tc2_EtherCAT">
+      <DefaultResolution>Tc2_EtherCAT, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_EtherCAT</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_Math">
+      <DefaultResolution>Tc2_Math, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_Math</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_Standard">
+      <DefaultResolution>Tc2_Standard, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_Standard</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_System">
+      <DefaultResolution>Tc2_System, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_System</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_TcpIp">
+      <DefaultResolution>Tc2_TcpIp, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_TcpIp</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc2_Utilities">
+      <DefaultResolution>Tc2_Utilities, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc2_Utilities</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc3_JsonXml">
+      <DefaultResolution>Tc3_JsonXml, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc3_JsonXml</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc3_Module">
+      <DefaultResolution>Tc3_Module, * (Beckhoff Automation GmbH)</DefaultResolution>
+      <Namespace>Tc3_Module</Namespace>
+    </PlaceholderReference>
+    <PlaceholderReference Include="Tc3_System_DK">
+      <DefaultResolution>Tc3_System_DK, * (Beckhoff - DK)</DefaultResolution>
+      <Namespace>Tc3_System_DK</Namespace>
+    </PlaceholderReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="PLC.tmc">
+      <SubType>Content</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <PlaceholderResolution Include="Tc3_JsonXml">
+      <Resolution>Tc3_JsonXml, * (Beckhoff Automation GmbH)</Resolution>
+    </PlaceholderResolution>
+    <PlaceholderResolution Include="Tc3_System_DK">
+      <Resolution>Tc3_System_DK, * (Beckhoff - DK)</Resolution>
+    </PlaceholderResolution>
+  </ItemGroup>
+  <ProjectExtensions>
+    <PlcProjectOptions>
+      <XmlArchive>
+  <Data>
+    <o xml:space="preserve" t="OptionKey">
+      <v n="Name">"&lt;ProjectRoot&gt;"</v>
+      <d n="SubKeys" t="Hashtable" ckt="String" cvt="OptionKey">
+        <v>{40450F57-0AA3-4216-96F3-5444ECB29763}</v>
+        <o>
+          <v n="Name">"{40450F57-0AA3-4216-96F3-5444ECB29763}"</v>
+          <d n="SubKeys" t="Hashtable" />
+          <d n="Values" t="Hashtable" ckt="String" cvt="String">
+            <v>ActiveVisuProfile</v>
+            <v>IR0whWr8bwfyBwAAHf+pawAAAABVAgAADnffSgAAAAABAAAAAAAAAAEaUwB5AHMAdABlAG0ALgBTAHQAcgBpAG4AZwACTHsAZgA5ADUAYgBiADQAMgA2AC0ANQA1ADIANAAtADQAYgA0ADUALQA5ADQAMAAwAC0AZgBiADAAZgAyAGUANwA3AGUANQAxAGIAfQADCE4AYQBtAGUABDJUAHcAaQBuAEMAQQBUACAAMwAuADEAIABCAHUAaQBsAGQAIAA0ADAAMgAyAC4AMQAwAAUWUAByAG8AZgBpAGwAZQBEAGEAdABhAAZMewAxADYAZQA1ADUAYgA2ADAALQA3ADAANAAzAC0ANABhADYAMwAtAGIANgA1AGIALQA2ADEANAA3ADEAMwA4ADcAOABkADQAMgB9AAcSTABpAGIAcgBhAHIAaQBlAHMACEx7ADMAYgBmAGQANQA0ADUAOQAtAGIAMAA3AGYALQA0AGQANgBlAC0AYQBlADEAYQAtAGEAOAAzADMANQA2AGEANQA1ADEANAAyAH0ACUx7ADkAYwA5ADUAOAA5ADYAOAAtADIAYwA4ADUALQA0ADEAYgBiAC0AOAA4ADcAMQAtADgAOQA1AGYAZgAxAGYAZQBkAGUAMQBhAH0ACg5WAGUAcgBzAGkAbwBuAAsGaQBuAHQADApVAHMAYQBnAGUADQpUAGkAdABsAGUADhpWAGkAcwB1AEUAbABlAG0ATQBlAHQAZQByAA8OQwBvAG0AcABhAG4AeQAQDFMAeQBzAHQAZQBtABESVgBpAHMAdQBFAGwAZQBtAHMAEjBWAGkAcwB1AEUAbABlAG0AcwBTAHAAZQBjAGkAYQBsAEMAbwBuAHQAcgBvAGwAcwATKFYAaQBzAHUARQBsAGUAbQBzAFcAaQBuAEMAbwBuAHQAcgBvAGwAcwAUJFYAaQBzAHUARQBsAGUAbQBUAGUAeAB0AEUAZABpAHQAbwByABUiVgBpAHMAdQBOAGEAdABpAHYAZQBDAG8AbgB0AHIAbwBsABYUdgBpAHMAdQBpAG4AcAB1AHQAcwAXDHMAeQBzAHQAZQBtABgYVgBpAHMAdQBFAGwAZQBtAEIAYQBzAGUAGSZEAGUAdgBQAGwAYQBjAGUAaABvAGwAZABlAHIAcwBVAHMAZQBkABoIYgBvAG8AbAAbIlAAbAB1AGcAaQBuAEMAbwBuAHMAdAByAGEAaQBuAHQAcwAcTHsANAAzAGQANQAyAGIAYwBlAC0AOQA0ADIAYwAtADQANABkADcALQA5AGUAOQA0AC0AMQBiAGYAZABmADMAMQAwAGUANgAzAGMAfQAdHEEAdABMAGUAYQBzAHQAVgBlAHIAcwBpAG8AbgAeFFAAbAB1AGcAaQBuAEcAdQBpAGQAHxZTAHkAcwB0AGUAbQAuAEcAdQBpAGQAIEhhAGYAYwBkADUANAA0ADYALQA0ADkAMQA0AC0ANABmAGUANwAtAGIAYgA3ADgALQA5AGIAZgBmAGUAYgA3ADAAZgBkADEANwAhFFUAcABkAGEAdABlAEkAbgBmAG8AIkx7AGIAMAAzADMANgA2AGEAOAAtAGIANQBjADAALQA0AGIAOQBhAC0AYQAwADAAZQAtAGUAYgA4ADYAMAAxADEAMQAwADQAYwAzAH0AIw5VAHAAZABhAHQAZQBzACRMewAxADgANgA4AGYAZgBjADkALQBlADQAZgBjAC0ANAA1ADMAMgAtAGEAYwAwADYALQAxAGUAMwA5AGIAYgA1ADUANwBiADYAOQB9ACVMewBhADUAYgBkADQAOABjADMALQAwAGQAMQA3AC0ANAAxAGIANQAtAGIAMQA2ADQALQA1AGYAYwA2AGEAZAAyAGIAOQA2AGIANwB9ACYWTwBiAGoAZQBjAHQAcwBUAHkAcABlACdUVQBwAGQAYQB0AGUATABhAG4AZwB1AGEAZwBlAE0AbwBkAGUAbABGAG8AcgBDAG8AbgB2AGUAcgB0AGkAYgBsAGUATABpAGIAcgBhAHIAaQBlAHMAKBBMAGkAYgBUAGkAdABsAGUAKRRMAGkAYgBDAG8AbQBwAGEAbgB5ACoeVQBwAGQAYQB0AGUAUAByAG8AdgBpAGQAZQByAHMAKzhTAHkAcwB0AGUAbQAuAEMAbwBsAGwAZQBjAHQAaQBvAG4AcwAuAEgAYQBzAGgAdABhAGIAbABlACwSdgBpAHMAdQBlAGwAZQBtAHMALUg2AGMAYgAxAGMAZABlADEALQBkADUAZABjAC0ANABhADMAYgAtADkAMAA1ADQALQAyADEAZgBhADcANQA2AGEAMwBmAGEANAAuKEkAbgB0AGUAcgBmAGEAYwBlAFYAZQByAHMAaQBvAG4ASQBuAGYAbwAvTHsAYwA2ADEAMQBlADQAMAAwAC0ANwBmAGIAOQAtADQAYwAzADUALQBiADkAYQBjAC0ANABlADMAMQA0AGIANQA5ADkANgA0ADMAfQAwGE0AYQBqAG8AcgBWAGUAcgBzAGkAbwBuADEYTQBpAG4AbwByAFYAZQByAHMAaQBvAG4AMgxMAGUAZwBhAGMAeQAzMEwAYQBuAGcAdQBhAGcAZQBNAG8AZABlAGwAVgBlAHIAcwBpAG8AbgBJAG4AZgBvADQwTABvAGEAZABMAGkAYgByAGEAcgBpAGUAcwBJAG4AdABvAFAAcgBvAGoAZQBjAHQANRpDAG8AbQBwAGEAdABpAGIAaQBsAGkAdAB5ANAAAhoD0AMBLQTQBQYaB9AHCBoBRQcJCNAACRoERQoLBAMAAAAFAAAACgAAAAAAAADQDAutAgAAANANAS0O0A8BLRDQAAkaBEUKCwQDAAAABQAAAAoAAAAoAAAA0AwLrQEAAADQDQEtEdAPAS0Q0AAJGgRFCgsEAwAAAAUAAAAKAAAAAAAAANAMC60CAAAA0A0BLRLQDwEtENAACRoERQoLBAMAAAAFAAAACgAAACgAAADQDAutAgAAANANAS0T0A8BLRDQAAkaBEUKCwQDAAAABQAAAAoAAAAKAAAA0AwLrQIAAADQDQEtFNAPAS0Q0AAJGgRFCgsEAwAAAAUAAAAKAAAAKAAAANAMC60CAAAA0A0BLRXQDwEtENAACRoERQoLBAMAAAAFAAAACgAAAAAAAADQDAutAgAAANANAS0W0A8BLRfQAAkaBEUKCwQDAAAABQAAAAoAAAAoAAAA0AwLrQQAAADQDQEtGNAPAS0Q0BkarQFFGxwB0AAcGgJFHQsEAwAAAAUAAAAKAAAAAAAAANAeHy0g0CEiGgJFIyQC0AAlGgVFCgsEAwAAAAMAAAAAAAAACgAAANAmC60AAAAA0AMBLSfQKAEtEdApAS0Q0AAlGgVFCgsEAwAAAAMAAAAAAAAACgAAANAmC60BAAAA0AMBLSfQKAEtEdApAS0QmiorAUUAAQLQAAEtLNAAAS0X0AAfLS3QLi8aA9AwC60BAAAA0DELrRMAAADQMhqtANAzLxoD0DALrQIAAADQMQutAwAAANAyGq0A0DQarQDQNRqtAA==</v>
+          </d>
+        </o>
+        <v>{192FAD59-8248-4824-A8DE-9177C94C195A}</v>
+        <o>
+          <v n="Name">"{192FAD59-8248-4824-A8DE-9177C94C195A}"</v>
+          <d n="SubKeys" t="Hashtable" />
+          <d n="Values" t="Hashtable" />
+        </o>
+      </d>
+      <d n="Values" t="Hashtable" />
+    </o>
+  </Data>
+  <TypeList>
+    <Type n="Hashtable">System.Collections.Hashtable</Type>
+    <Type n="OptionKey">{54dd0eac-a6d8-46f2-8c27-2f43c7e49861}</Type>
+    <Type n="String">System.String</Type>
+  </TypeList>
+</XmlArchive>
+    </PlcProjectOptions>
+  </ProjectExtensions>
+</Project>

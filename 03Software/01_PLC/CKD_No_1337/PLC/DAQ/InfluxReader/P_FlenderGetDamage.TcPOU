@@ -1,0 +1,148 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="P_FlenderGetDamage" Id="{e3da38f8-740e-4543-b316-5410eb1b92b1}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_FlenderGetDamage
+VAR_IN_OUT
+	DmgValue 	: ST_DamageCounter;	
+END_VAR
+VAR
+	
+	Dmg		 	: FB_Flender_DamageReader;
+	Dmg1h		: FB_Flender_DamageReader;
+	Dmg24h		: FB_Flender_DamageReader;
+
+END_VAR
+VAR
+	InfluxIp				: T_IPv4Addr := '10.10.0.122'; 
+	ReadInterval 			: TIME := T#1M; 
+	
+END_VAR
+VAR PERSISTENT
+	Dmg_Foundation_Current 	: LREAL;
+    Dmg_Footplates_Current 	: LREAL;
+    Dmg_MBS_Current			: LREAL;
+    Dmg_Lu1_Current			: LREAL;
+	Dmg_Lu2_Current			: LREAL;
+	
+	Dmg_Foundation_1h 		: LREAL;
+    Dmg_Footplates_1h 		: LREAL;
+    Dmg_MBS_1h				: LREAL;
+    Dmg_Lu1_1h				: LREAL;
+ 	Dmg_Lu2_1h				: LREAL;
+	                    	
+	Dmg_Foundation_24h 		: LREAL;
+    Dmg_Footplates_24h 		: LREAL;
+    Dmg_MBS_24h				: LREAL;
+    Dmg_Lu1_24h				: LREAL;
+	Dmg_Lu2_24h				: LREAL;
+
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// ============= Get Data
+	Dmg(
+		TimeOffset		:= '', 
+		ReadInterval	:= ReadInterval, 
+		Ip				:= InfluxIp, 
+		Dmg_Foundation	:= Dmg_Foundation_Current, 
+		Dmg_Footplates	:= Dmg_Footplates_Current, 
+		Dmg_MBS			:= Dmg_MBS_Current, 
+		Dmg_Lu1			:= Dmg_Lu1_Current,
+		Dmg_Lu2			:= Dmg_Lu2_Current	);
+	
+	Dmg1h(
+		TimeOffset		:= '1h', 
+		ReadInterval	:= ReadInterval, 
+		Ip				:= InfluxIp, 
+		Dmg_Foundation	:= Dmg_Foundation_1h, 
+		Dmg_Footplates	:= Dmg_Footplates_1h, 
+		Dmg_MBS			:= Dmg_MBS_1h, 
+		Dmg_Lu1			:= Dmg_Lu1_1h,
+		Dmg_Lu2			:= Dmg_Lu2_1h	);
+		
+	Dmg24h(
+		TimeOffset		:= '24h', 
+		ReadInterval	:= ReadInterval, 
+		Ip				:= InfluxIp, 
+		Dmg_Foundation	:= Dmg_Foundation_24h, 
+		Dmg_Footplates	:= Dmg_Footplates_24h, 
+		Dmg_MBS			:= Dmg_MBS_24h, 
+		Dmg_Lu1			:= Dmg_Lu1_24h,
+		Dmg_Lu2			:= Dmg_Lu2_24h	);
+		
+		
+// ============= Calculate Display Values
+
+DmgValue.FootPlatesDmg.AccumulatedDmg.fValue 	:= Dmg_Footplates_Current;
+DmgValue.FootPlatesDmg.DmgRate1hr.fValue 		:= Dmg_Footplates_Current - Dmg_Footplates_1h;
+DmgValue.FootPlatesDmg.DmgRate1day.fValue 		:= Dmg_Footplates_Current - Dmg_Footplates_24h; 
+
+DmgValue.FoundationDmg.AccumulatedDmg.fValue 	:= Dmg_Foundation_Current;
+DmgValue.FoundationDmg.DmgRate1hr.fValue 		:= Dmg_Foundation_Current - Dmg_Foundation_1h;
+DmgValue.FoundationDmg.DmgRate1day.fValue 		:= Dmg_Foundation_Current - Dmg_Foundation_24h; 
+
+DmgValue.Lu1Dmg.AccumulatedDmg.fValue 			:= Dmg_Lu1_Current;
+DmgValue.Lu1Dmg.DmgRate1hr.fValue 				:= Dmg_Lu1_Current - Dmg_Lu1_1h;
+DmgValue.Lu1Dmg.DmgRate1day.fValue 				:= Dmg_Lu1_Current - Dmg_Lu1_24h; 
+
+DmgValue.Lu2Dmg.AccumulatedDmg.fValue 			:= Dmg_Lu2_Current;
+DmgValue.Lu2Dmg.DmgRate1hr.fValue 				:= Dmg_Lu2_Current - Dmg_Lu2_1h;
+DmgValue.Lu2Dmg.DmgRate1day.fValue 				:= Dmg_Lu2_Current - Dmg_Lu2_24h; 
+
+DmgValue.MbsDmg.AccumulatedDmg.fValue 			:= Dmg_MBS_Current;
+DmgValue.MbsDmg.DmgRate1hr.fValue 				:= Dmg_MBS_Current - Dmg_MBS_1h;
+DmgValue.MbsDmg.DmgRate1day.fValue 				:= Dmg_MBS_Current - Dmg_MBS_24h; 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="P_FlenderGetDamage">
+      <LineId Id="29" Count="0" />
+      <LineId Id="37" Count="6" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="139" Count="0" />
+      <LineId Id="44" Count="7" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="140" Count="0" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="54" Count="6" />
+      <LineId Id="53" Count="0" />
+      <LineId Id="141" Count="0" />
+      <LineId Id="61" Count="2" />
+      <LineId Id="123" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="124" Count="1" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="126" Count="1" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="129" Count="2" />
+      <LineId Id="128" Count="0" />
+      <LineId Id="142" Count="0" />
+      <LineId Id="144" Count="1" />
+      <LineId Id="143" Count="0" />
+      <LineId Id="133" Count="2" />
+      <LineId Id="132" Count="0" />
+      <LineId Id="68" Count="21" />
+      <LineId Id="64" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

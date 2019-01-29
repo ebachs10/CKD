@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="InfluxAddData_1Hz" Id="{8ffdae7d-952a-4dde-b564-0025ab744451}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION InfluxAddData_1Hz : BOOL
+VAR_IN_OUT
+	Data			: ST_DATA;
+	DataCollector	: FB_InfluxDataCollector;
+END_VAR
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Damage counter values
+DataCollector.AddLreal('Test2',		Data.Gps.Inputs.x);]]></ST>
+    </Implementation>
+    <LineIds Name="InfluxAddData_1Hz">
+      <LineId Id="6285" Count="1" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

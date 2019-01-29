@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="fcnExtractInfluxData" Id="{bc15ab9e-6563-44dd-85f1-f776fd5d95f4}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION fcnExtractInfluxData : BOOL
+VAR_IN_OUT
+	InputString : FB_StringBuilder; 
+	ResultArray : ARRAY[*] OF LREAL; 
+END_VAR
+
+
+VAR_INPUT
+	NumbersToFind	: DINT;	
+END_VAR
+VAR
+	ActualNumbersToFind : DINT;
+	iSearchNumber	: DINT;
+END_VAR
+
+
+VAR_OUTPUT
+	
+	ValuesFound : UDINT; 
+
+END_VAR
+VAR
+	arLower	: DINT; 
+	arUpper	: DINT; 
+	
+	iStartIndex : DINT; 
+	
+		searchString	: T_MAXSTRING := 'values';
+		
+	iNumberStart : DINT; 	
+	iNumberEnd : DINT; 	
+	iNumberLength : DINT; 
+	
+	numberTxt		: T_MAXSTRING;
+	parsedNumber	: LREAL; 
+	
+	Info	 : ARRAY[0..10] OF ST_NumberInString;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[arLower := LOWER_BOUND(ResultArray,1); 
+arUpper := UPPER_BOUND(ResultArray,1); 
+
+ActualNumbersToFind := MIN(NumbersToFind, arUpper - arLower); 
+
+IF ActualNumbersToFind > 0 THEN
+
+	iStartIndex := InputString.GetIndexOf('values',250);
+	iStartIndex := InputString.GetIndexOf(',',iStartIndex); // Position of first comma after Time info
+	
+	// EG: {"results":[{"statement_id":0,"series":[{"name":"test","columns":["time","last","last_1","last_2"],"values":[["1970-01-01T00:00:00Z",12344,12344.123123123,0.0123421342]]}]}]}$N
+	
+	iNumberEnd	 := iStartIndex;
+	
+	FOR iSearchNumber := 0 TO ActualNumbersToFind - 1 DO
+		// Find each number
+		iNumberStart := iNumberEnd +1;
+		
+		IF iSearchNumber < ActualNumbersToFind - 1 THEN
+			iNumberEnd := InputString.GetIndexOf(',',iNumberStart+1);
+		ELSE
+			iNumberEnd := InputString.GetIndexOf(']',iNumberStart+1);
+		END_IF
+		
+		iNumberLength := iNumberEnd - iNumberStart; 
+		
+		// Copy txt to T_MAXSTRING
+		numberTxt := ''; 
+		
+		memset(	destAddr	:= ADR(numberTxt),
+				fillByte	:= 0,
+				n			:= SIZEOF(T_MAXSTRING));
+				
+		memcpy(	destAddr 	:= ADR(numberTxt),
+				srcAddr		:=  InputString.StringPointer+ TO_LWORD(iNumberStart), 
+				n			:=  TO_UDINT(MIN(iNumberLength,SIZEOF(T_MAXSTRING))));
+	
+		parsedNumber := TO_LREAL(numberTxt);
+		
+		ResultArray[arLower + iSearchNumber] := parsedNumber; 
+		
+		IF iSearchNumber < 10 THEN
+			info[iSearchNumber].StartIndex 	:= iNumberStart;
+			info[iSearchNumber].EndIndex 	:= iNumberEnd;
+			info[iSearchNumber].Length 		:= iNumberLength; 
+			info[iSearchNumber].Txt 		:= numberTxt;
+			info[iSearchNumber].Value 		:= parsedNumber; 
+		END_IF
+		
+		
+	END_FOR
+
+	
+
+END_IF
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="fcnExtractInfluxData">
+      <LineId Id="7" Count="0" />
+      <LineId Id="14" Count="0" />
+      <LineId Id="49" Count="0" />
+      <LineId Id="26" Count="0" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="16" Count="0" />
+      <LineId Id="28" Count="1" />
+      <LineId Id="58" Count="0" />
+      <LineId Id="82" Count="1" />
+      <LineId Id="71" Count="1" />
+      <LineId Id="56" Count="0" />
+      <LineId Id="60" Count="0" />
+      <LineId Id="66" Count="0" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="78" Count="0" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="65" Count="0" />
+      <LineId Id="80" Count="1" />
+      <LineId Id="79" Count="0" />
+      <LineId Id="62" Count="0" />
+      <LineId Id="84" Count="1" />
+      <LineId Id="119" Count="5" />
+      <LineId Id="63" Count="0" />
+      <LineId Id="86" Count="1" />
+      <LineId Id="64" Count="0" />
+      <LineId Id="88" Count="0" />
+      <LineId Id="91" Count="0" />
+      <LineId Id="128" Count="1" />
+      <LineId Id="125" Count="0" />
+      <LineId Id="92" Count="0" />
+      <LineId Id="114" Count="4" />
+      <LineId Id="126" Count="1" />
+      <LineId Id="61" Count="0" />
+      <LineId Id="33" Count="0" />
+      <LineId Id="17" Count="0" />
+      <LineId Id="15" Count="0" />
+      <LineId Id="13" Count="0" />
+      <LineId Id="96" Count="12" />
+      <LineId Id="95" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

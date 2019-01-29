@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="MAIN" Id="{24755970-32eb-41b5-9fc7-46989e4620de}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM MAIN
+VAR
+	Data					: ST_DATA;
+	
+	
+	// ============== Set input/output mode: 	StaticData, SimulinkPlant, VirtualPlant PhysicalPlant	
+	EmulatedState 			: E_EmulatedState 		:= E_EmulatedState.VirtualPlant;		
+	
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[
+
+//============ UPDATE DAQ =============	
+P_UpdateDAQ(Data := Data);
+
+//============ UPDATE HMI =============	
+P_UpdateHmi(Data := Data);]]></ST>
+    </Implementation>
+    <LineIds Name="MAIN">
+      <LineId Id="9" Count="0" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="21" Count="0" />
+      <LineId Id="20" Count="0" />
+      <LineId Id="12" Count="0" />
+      <LineId Id="2" Count="0" />
+      <LineId Id="13" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

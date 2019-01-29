@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <DUT Name="ST_GPS" Id="{fa9fb9c9-83bf-44e9-bdd8-341544d83961}">
+    <Declaration><![CDATA[TYPE ST_GPS :
+STRUCT
+	Inputs			: ST_GPS_INPUTS;
+	Outputs			: ST_GPS_OUTPUTS;
+	Calculations	: ST_GPS_CALCULATIONS;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="FB_InfluxDataSender" Id="{54fe589f-d2f4-49bd-8f14-a767125ae330}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_InfluxDataSender
+VAR_INPUT
+	Data 		: REFERENCE TO FB_InfluxDataCollector; 
+	Ip			: T_IPv4Addr := '127.0.0.1';	(* IP Adress for TCP/IP Server *)
+	Port 		: UDINT := 8086; 				(* Port To Connect to *)
+END_VAR
+VAR_OUTPUT
+	GlobalWriteSucces	: BOOL;
+END_VAR
+VAR CONSTANT
+	BufferLength : DINT := 2; 
+END_VAR
+VAR
+	ResetConnection : BOOL; 
+END_VAR
+
+VAR
+	i : DINT; 
+	iTest : UDINT; 	
+	currentBytes : UDINT; 
+
+	tcp 			: ARRAY[1..BufferLength] OF FB_TcpConnection; 
+	CurrentState 	: ARRAY[1..BufferLength] OF E_TcpState; 
+	Connected 		: ARRAY[1..BufferLength] OF BOOL; 
+	
+	RisingEdge 		: ARRAY[1..BufferLength] OF R_TRIG; 
+	FallingEdge		: ARRAY[1..BufferLength] OF F_TRIG; 	
+	
+	SendCounter 	: ARRAY[1..BufferLength] OF UDINT;
+	
+	WriteSucces 	: ARRAY[1..BufferLength] OF BOOL; 
+END_VAR
+VAR
+	ShiftCounter : CTU;
+	ShiftCounted : UDINT; 
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[iTest := iTest + 1;  
+
+IF __ISVALIDREF(Data) THEN
+	GlobalWriteSucces := TRUE;
+	FOR i := 1 TO BufferLength DO
+		
+		
+		
+		IF ResetConnection THEN
+			tcp[i].Disconnect(); 
+		END_IF	
+	
+		
+		tcp[i](	Ip 					:= Ip,//'192.168.1.209',
+				Port				:= 8086,
+				ReplyReadInterval 	:= T#100MS); 
+				
+		CurrentState[i] := tcp[i].State; 		
+		Connected[i] := tcp[i].Connected; 		
+	
+		RisingEdge[i](CLK := Data.IsReadyToSend(i));
+		FallingEdge[i](CLK := Data.IsReadyToSend(i));
+		
+		IF RisingEdge[i].Q THEN
+			currentBytes := Data.GetData(i).Length;
+			tcp[i].Send(Data.GetData(i).StringPointer, Data.GetData(i).Length);
+			SendCounter[i] := SendCounter[i] + 1;  	
+		END_IF
+		IF FallingEdge[i].Q THEN
+			tcp[i].Connect();		
+		END_IF
+		
+		
+		
+		//IF tcp[i].
+		
+		IF CurrentState[i] < E_TcpState.Connected THEN
+			WriteSucces[i] := FALSE; 
+		ELSIF CurrentState[i] = E_TcpState.Received THEN
+			WriteSucces[i] := (memcmp(tcp[i].Response.StringPointer,ADR('HTTP/1.1 204 No Content'),20) = 0) 
+								AND tcp[i].ResponseReceived;
+		END_IF
+		
+	END_FOR
+	
+	GlobalWriteSucces := WriteSucces[1] AND WriteSucces[2];
+	ShiftCounter(CU := GlobalWriteSucces, PV := 200, CV => ShiftCounted);
+ELSE
+	GlobalWriteSucces := FALSE; 
+END_IF
+
+
+
+
+
+
+
+
+]]></ST>
+    </Implementation>
+    <LineIds Name="FB_InfluxDataSender">
+      <LineId Id="38" Count="20" />
+      <LineId Id="131" Count="0" />
+      <LineId Id="59" Count="5" />
+      <LineId Id="134" Count="2" />
+      <LineId Id="132" Count="1" />
+      <LineId Id="65" Count="10" />
+      <LineId Id="95" Count="0" />
+      <LineId Id="76" Count="2" />
+      <LineId Id="92" Count="1" />
+      <LineId Id="79" Count="7" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

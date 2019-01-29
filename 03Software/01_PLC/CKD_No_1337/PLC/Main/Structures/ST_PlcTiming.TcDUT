@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <DUT Name="ST_PlcTiming" Id="{31a87766-0e33-4ec9-9377-eff63a2bd766}">
+    <Declaration><![CDATA[TYPE ST_PlcTiming :
+STRUCT
+	TimeStamp 		: T_FILETIME;  	(* Current Windows timestamp *)
+	UnixTimeStamp 	: ULINT; 		(* Number of 100 ns since 1.1.1970 *)
+	SpanTime		: LTIME;		(* PLC RunTime*)
+
+	ScanTime		: LTIME; 		(* TIME: PLC Scantime *)
+	ScanTime_s		: LREAL; 		(* LREAL: PLC Scantime in seconds *)
+	ScanTime_ms		: LREAL	:= ScanTime_s * 1E3;		(* LREAL: PLC Scantime in milli seconds *)
+	
+	Tick			: UDINT := 0; 	(* Current PLC tick count *)
+	Toggle			: BOOL; 		(* BOOL: Toggle Each Scan *)
+	Toggle1Hz		: BOOL; 		(* BOOL: Toggle at 1 Hz: 1000 ms *)
+	Toggle100Hz		: BOOL; 		(* BOOL: Toggle at 100 Hz: 10 ms*)
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

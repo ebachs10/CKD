@@ -1,0 +1,374 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="FB_InfluxReader" Id="{8de911ea-37a4-428c-aafe-4519f18afff7}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_InfluxReader
+VAR_INPUT
+	Ip					: T_IPv4Addr := '127.0.0.1'; (* IP Adress for TCP/IP Server *)
+	Port 				: UDINT := 8086; (* Port To Connect to *)
+	ReplyReadInterval 	: TIME := T#200MS; (* Time for allowing server to start responding*)
+	InfluxDatabase		: T_MAXSTRING;
+	InfluxMeasurement	: T_MAXSTRING; 
+	ValuesToFind		: DINT; 
+	TimeOffset			: T_MAXSTRING; 
+END_VAR
+VAR_IN_OUT
+		ValueNames			: ARRAY[0..50] OF T_MAXSTRING;
+END_VAR
+VAR_OUTPUT
+		ValuesRead			: ARRAY[0..50] OF LREAL;
+		CurrentState	: 	E_InfluxReaderState; 
+		
+END_VAR
+VAR
+	NamesLower 		: DINT;
+	NamesUpper 		: DINT;
+	NamesNumber		: DINT;
+	iNames			: DINT; 
+	iNamesAdded		: DINT; 
+	                  
+	ValuesLower		: DINT;
+	ValuesUpper		: DINT;
+	ValuesNumber	: DINT;
+END_VAR
+
+VAR
+	iTest 	: UDINT; 
+	ReadData		: BOOL; 
+	
+	
+	LastState		: E_InfluxReaderState; 
+	InStateCounter : TON; 
+	
+	tcp	: FB_TcpConnection;	
+	
+	http	: FB_StringBuilder; 
+	query	: FB_StringBuilder; 
+	
+	QueryString	: STRING(500); 
+	
+	ResultsFound : UDINT;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// ========== Manage Stuff
+	iTest := iTest + 1;
+	
+	tcp(	Ip 					:= Ip,//'192.168.1.209',
+			Port				:= Port,
+			ReplyReadInterval 	:= ReplyReadInterval); 
+	
+	InStateCounter(IN := CurrentState = LastState,
+					PT := T#10S); 
+
+// ========== Range calculations
+	NamesLower 	 := 0;//LOWER_BOUND(ValueNames,1);
+	NamesUpper 	 := 50;//UPPER_BOUND(ValueNames,1);
+	NamesNumber	 := ABS(NamesUpper - NamesLower);
+				 
+	ValuesLower	 := 0;//LOWER_BOUND(ValuesRead,1);
+	ValuesUpper	 := 50;//UPPER_BOUND(ValuesRead,1);
+	ValuesNumber := ABS(ValuesUpper - ValuesLower);
+
+// ========= Handle Timeout				
+	IF InStateCounter.Q THEN	// Do To idle if no state change in 2min
+		CurrentState := E_InfluxReaderState.Idle;
+	END_IF
+
+// ======== Read values				
+	CASE CurrentState OF
+		
+		E_InfluxReaderState.Idle:
+			IF ReadData THEN
+				ReadData := FALSE;
+				CurrentState	:= E_InfluxReaderState.Connecting;
+			END_IF
+	
+		E_InfluxReaderState.Connecting:
+			tcp.Connect();
+			IF tcp.Connected THEN
+				CurrentState	:= E_InfluxReaderState.Query;
+			END_IF
+		
+		E_InfluxReaderState.Query:
+			// eg: 'q=SELECT last(TestData),last(TestData1),last(TestData2) FROM test LIMIT 1'; 
+			query.Clear(); 
+			query.Append('q=SELECT ');
+			iNamesAdded := 0; 
+			FOR iNames := NamesLower TO NamesUpper DO
+				query.Append('last(');
+				query.Append(ValueNames[iNames]);
+				query.Append(')');
+				iNamesAdded := iNamesAdded + 1; 
+				
+				IF iNamesAdded = ValuesToFind THEN
+					EXIT;
+				ELSE
+					query.Append(',');
+				END_IF
+			END_FOR
+			
+			query.Append(' FROM ');
+			query.Append(InfluxMeasurement);
+			
+			IF len(TimeOffset) > 0 THEN
+				query.Append(' WHERE time < now() - '); // JBM: Should it be WHERE time > now() - 10m?
+				query.Append(TimeOffset);			
+			END_IF
+			
+			
+			query.AppendLine(' LIMIT 1');
+		
+			http.Clear(); 
+			http.Append('POST /query?db=');
+			http.Append(InfluxDatabase);  
+			http.AppendLine(' HTTP/1.1');
+			http.AppendLine('Host: BeckhoffIPC');
+			http.AppendLine('User-Agent: TwinCAT HttpClient');
+			http.AppendLine('Accept: */*');
+			http.AppendLine('Content-Type: application/x-www-form-urlencoded');
+			http.Append('Content-Length: ');
+			http.AppendLine(TO_STRING(query.Length));
+			http.AppendLine('');
+			http.AppendGeneric(query.StringPointer,query.Length);	
+				
+			memcpy(ADR(QueryString), http.StringPointer, MIN(http.Length,SIZEOF(QueryString)));
+			
+			tcp.Send(http.StringPointer, http.Length);
+			CurrentState	:= E_InfluxReaderState.ConvertingNumbers;
+			
+
+			
+		E_InfluxReaderState.ConvertingNumbers:
+		
+			IF NOT(tcp.Busy) THEN
+				QueryString := tcp.Response.ToString;
+				ExtractNumbers(	InputString 	:= tcp.Response,
+								ResultArray 	:= ValuesRead,
+								NumbersToFind 	:= ValuesToFind,
+								ValuesFound		=> ResultsFound); 
+							
+							CurrentState	:= E_InfluxReaderState.Disconnecting;
+							tcp.Disconnect();
+			END_IF
+		
+		
+	
+			
+				
+			
+		E_InfluxReaderState.Disconnecting:				
+			IF NOT(tcp.Connected) THEN
+				CurrentState	:= E_InfluxReaderState.Idle;
+			END_IF
+	
+	END_CASE]]></ST>
+    </Implementation>
+    <Method Name="ExtractNumbers" Id="{618a9ac0-e41b-4b63-aabc-a16eae3ec5b8}">
+      <Declaration><![CDATA[METHOD PRIVATE ExtractNumbers : BOOL
+VAR_IN_OUT
+	InputString : FB_StringBuilder; 
+	ResultArray : ARRAY[0..50] OF LREAL; 
+END_VAR
+
+
+VAR_INPUT
+	NumbersToFind	: DINT;	
+END_VAR
+VAR
+	ActualNumbersToFind : DINT;
+	iSearchNumber	: DINT;
+END_VAR
+
+
+VAR_OUTPUT
+	
+	ValuesFound : UDINT; 
+
+END_VAR
+VAR
+	arLower	: DINT; 
+	arUpper	: DINT; 
+	
+	iStartIndex : DINT; 
+	
+		searchString	: T_MAXSTRING := 'values';
+		
+	iNumberStart : DINT; 	
+	iNumberEnd : DINT; 	
+	iNumberLength : DINT; 
+	
+	numberTxt		: T_MAXSTRING;
+	parsedNumber	: LREAL; 
+END_VAR
+VAR_INST
+	Info	 : ARRAY[0..10] OF ST_NumberInString;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[arLower := 0; 
+arUpper := 50;
+
+ActualNumbersToFind := MIN(NumbersToFind, arUpper - arLower); 
+
+IF ActualNumbersToFind > 0 THEN
+
+	iStartIndex := InputString.GetIndexOf('values',250);
+	iStartIndex := InputString.GetIndexOf(',',TO_UDINT(iStartIndex)); // Position of first comma after Time info
+	
+	// EG: {"results":[{"statement_id":0,"series":[{"name":"test","columns":["time","last","last_1","last_2"],"values":[["1970-01-01T00:00:00Z",12344,12344.123123123,0.0123421342]]}]}]}$N
+	
+	iNumberEnd	 := iStartIndex;
+	
+	FOR iSearchNumber := 0 TO ActualNumbersToFind - 1 DO
+		// Find each number
+		iNumberStart := iNumberEnd +1;
+		
+		IF iSearchNumber < ActualNumbersToFind - 1 THEN
+			iNumberEnd := InputString.GetIndexOf(',',TO_UDINT(iNumberStart+1));
+		ELSE
+			iNumberEnd := InputString.GetIndexOf(']',TO_UDINT(iNumberStart+1));
+		END_IF
+		
+		iNumberLength := iNumberEnd - iNumberStart; 
+		
+		IF iNumberStart = -1 OR iNumberEnd = -1 THEN
+			EXIT;
+		END_IF
+		
+		// Copy txt to T_MAXSTRING
+		numberTxt := ''; 
+		
+		memset(	destAddr	:= ADR(numberTxt),
+				fillByte	:= 0,
+				n			:= SIZEOF(T_MAXSTRING));
+				
+		memcpy(	destAddr 	:= ADR(numberTxt),
+				srcAddr		:=  InputString.StringPointer+ TO_LWORD(iNumberStart), 
+				n			:=  TO_UDINT(MIN(iNumberLength,SIZEOF(T_MAXSTRING))));
+	
+		parsedNumber := TO_LREAL(numberTxt);
+		
+		ResultArray[arLower + iSearchNumber] := parsedNumber; 
+		
+		IF iSearchNumber < 10 THEN
+			info[iSearchNumber].StartIndex 	:= iNumberStart;
+			info[iSearchNumber].EndIndex 	:= iNumberEnd;
+			info[iSearchNumber].Length 		:= iNumberLength; 
+			info[iSearchNumber].Txt 		:= numberTxt;
+			info[iSearchNumber].Value 		:= parsedNumber; 
+		END_IF
+		
+		
+	END_FOR
+
+	
+
+END_IF
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ReadValues" Id="{d75f2e1c-69c8-4632-8f4e-72edbd6ca992}">
+      <Declaration><![CDATA[METHOD ReadValues : BOOL
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.ReadData := TRUE; ]]></ST>
+      </Implementation>
+    </Method>
+    <LineIds Name="FB_InfluxReader">
+      <LineId Id="62" Count="0" />
+      <LineId Id="64" Count="3" />
+      <LineId Id="34" Count="0" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="35" Count="0" />
+      <LineId Id="71" Count="0" />
+      <LineId Id="119" Count="1" />
+      <LineId Id="124" Count="8" />
+      <LineId Id="73" Count="0" />
+      <LineId Id="75" Count="0" />
+      <LineId Id="77" Count="0" />
+      <LineId Id="133" Count="0" />
+      <LineId Id="74" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="55" Count="1" />
+      <LineId Id="82" Count="0" />
+      <LineId Id="57" Count="0" />
+      <LineId Id="81" Count="0" />
+      <LineId Id="87" Count="1" />
+      <LineId Id="90" Count="1" />
+      <LineId Id="84" Count="1" />
+      <LineId Id="52" Count="0" />
+      <LineId Id="105" Count="1" />
+      <LineId Id="137" Count="0" />
+      <LineId Id="234" Count="0" />
+      <LineId Id="110" Count="0" />
+      <LineId Id="239" Count="0" />
+      <LineId Id="135" Count="0" />
+      <LineId Id="240" Count="0" />
+      <LineId Id="235" Count="0" />
+      <LineId Id="144" Count="0" />
+      <LineId Id="138" Count="0" />
+      <LineId Id="236" Count="0" />
+      <LineId Id="142" Count="0" />
+      <LineId Id="140" Count="1" />
+      <LineId Id="136" Count="0" />
+      <LineId Id="148" Count="2" />
+      <LineId Id="287" Count="0" />
+      <LineId Id="289" Count="2" />
+      <LineId Id="288" Count="0" />
+      <LineId Id="292" Count="1" />
+      <LineId Id="151" Count="0" />
+      <LineId Id="93" Count="0" />
+      <LineId Id="96" Count="1" />
+      <LineId Id="152" Count="1" />
+      <LineId Id="98" Count="6" />
+      <LineId Id="94" Count="1" />
+      <LineId Id="156" Count="2" />
+      <LineId Id="161" Count="0" />
+      <LineId Id="221" Count="0" />
+      <LineId Id="165" Count="0" />
+      <LineId Id="162" Count="0" />
+      <LineId Id="159" Count="0" />
+      <LineId Id="222" Count="0" />
+      <LineId Id="226" Count="0" />
+      <LineId Id="340" Count="0" />
+      <LineId Id="228" Count="2" />
+      <LineId Id="227" Count="0" />
+      <LineId Id="231" Count="1" />
+      <LineId Id="237" Count="0" />
+      <LineId Id="223" Count="2" />
+      <LineId Id="169" Count="2" />
+      <LineId Id="174" Count="0" />
+      <LineId Id="54" Count="0" />
+      <LineId Id="176" Count="1" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="37" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxReader.ExtractNumbers">
+      <LineId Id="43" Count="25" />
+      <LineId Id="150" Count="0" />
+      <LineId Id="152" Count="1" />
+      <LineId Id="151" Count="0" />
+      <LineId Id="69" Count="41" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_InfluxReader.ReadValues">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

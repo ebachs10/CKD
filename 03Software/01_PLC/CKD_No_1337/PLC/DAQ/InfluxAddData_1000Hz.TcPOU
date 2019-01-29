@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="InfluxAddData_1000Hz" Id="{42d4493b-eece-68f4-000d-07d00851ecfb}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION InfluxAddData_1000Hz : BOOL
+VAR_IN_OUT
+	Data	: ST_DATA;
+	DataCollector	: FB_InfluxDataCollector;
+END_VAR
+
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// =================== Test
+	DataCollector.AddLreal(	'Test3',                                         Data.Gps.Inputs.x);
+	
+	
+	
+
+
+	
+
+	
+
+	
+
+	
+	
+]]></ST>
+    </Implementation>
+    <LineIds Name="InfluxAddData_1000Hz">
+      <LineId Id="7528" Count="1" />
+      <LineId Id="7568" Count="2" />
+      <LineId Id="7632" Count="2" />
+      <LineId Id="7713" Count="1" />
+      <LineId Id="7801" Count="0" />
+      <LineId Id="7908" Count="0" />
+      <LineId Id="7929" Count="2" />
+      <LineId Id="5880" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

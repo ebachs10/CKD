@@ -1,0 +1,316 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="FB_StringBuilder" Id="{dee2e3a7-bc35-4e5e-a9ca-fb16e4ba4746}" SpecialFunc="None">
+    <Declaration><![CDATA[FUNCTION_BLOCK FB_StringBuilder
+
+VAR
+	{attribute 'hide'}
+	_dataBuffer		: ARRAY[0..MaxBufferSize] OF BYTE;  // Buffer for storing of all text
+	_dataBufferAdd 	: POINTER TO BYTE; // Databuffer start adress
+	_currentLength 	: UDINT; // Current length of string in databuffer. 
+END_VAR
+
+VAR CONSTANT
+	MaxBufferSize : UDINT := 49999999; // max 50MB buffer 	
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Append" Id="{f0a312ae-549f-4e90-b105-c9135daa53e1}">
+      <Declaration><![CDATA[METHOD Append : BOOL
+VAR_INPUT
+	InputString : T_MaxString;
+END_VAR
+VAR
+	StringLength: UDINT;
+END_VAR
+
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+StringLength := DINT_TO_UDINT(LEN(InputString));
+Append := THIS^.AppendGeneric(ADR(InputString),StringLength); 
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AppendGeneric" Id="{4a606af7-0130-4cd1-a940-87be6db83117}">
+      <Declaration><![CDATA[METHOD AppendGeneric : BOOL
+VAR_INPUT
+	AddressPointer : POINTER TO BYTE; // Pointer to data
+	DataLength : UDINT; 
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _dataBufferAdd = 0 THEN
+	_dataBufferAdd := ADR(_dataBuffer);
+END_IF
+
+IF _currentLength + DataLength < MaxBufferSize AND DataLength > 0 THEN
+	MEMCPY(_dataBufferAdd + _currentLength, AddressPointer, DataLength);
+	_currentLength := _currentLength + DataLength;
+	AppendGeneric := TRUE;
+ELSE
+	AppendGeneric := FALSE;
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AppendLine" Id="{ac2956bf-22dc-44c9-a789-21f1b2ed884d}">
+      <Declaration><![CDATA[METHOD AppendLine : BOOL
+VAR_INPUT
+	InputString : T_MaxString;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[THIS^.Append(InputString);
+THIS^.Append('$R$N');]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="BufferSize" Id="{346c3946-c687-4e0b-9485-e2b9636c0948}">
+      <Declaration><![CDATA[PROPERTY BufferSize : UDINT]]></Declaration>
+      <Get Name="Get" Id="{d1c51689-53e3-4ce3-8080-77330e73e4f9}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[BufferSize := MaxBufferSize; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="Clear" Id="{9f431463-da2d-4510-8a8b-f04590f59e86}">
+      <Declaration><![CDATA[METHOD Clear : BOOL
+VAR_INPUT
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_currentLength := 0; 
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="GetIndexOf" Id="{6091a517-dfa1-4c73-9dd3-c93c50c8e7a5}">
+      <Declaration><![CDATA[METHOD GetIndexOf : DINT
+VAR_INPUT
+	SearchString	: T_MAXSTRING; 
+	StartIndex		: UDINT;
+END_VAR
+VAR
+	searchStringLength : UDINT;
+	
+	iStringIndex	: UDINT;
+
+	
+	matchFound 	: BOOL;
+
+	
+
+ 
+END_VAR]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[
+
+
+searchStringLength := TO_UDINT(LEN(SearchString));
+
+IF StartIndex < 0 THEN
+	StartIndex := 0;
+END_IF
+
+matchFound := FALSE; 
+IF (searchStringLength <= THIS^.Length) AND (StartIndex <  THIS^.Length-searchStringLength) THEN
+	FOR iStringIndex := StartIndex TO (THIS^.Length-searchStringLength) DO
+		// Loop through current string.
+	
+		
+		// Search for string
+		
+		matchFound := memcmp(	pBuf1 	:= THIS^.StringPointer + iStringIndex,
+								pBuf2 	:= ADR(SearchString),
+								n		:= searchStringLength) = 0;  
+	
+	
+		IF matchFound THEN
+			EXIT;
+		END_IF
+	END_FOR
+END_IF
+IF matchFound THEN
+	GetIndexOf := TO_DINT(iStringIndex); 
+ELSE
+	GetIndexOf := -1;
+END_IF
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Initialize" Id="{b99fed44-03f1-496f-bfcf-4437aa3bee38}">
+      <Declaration><![CDATA[METHOD Initialize : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _dataBufferAdd = 0 THEN
+	_dataBufferAdd := ADR(_dataBuffer);
+END_IF]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Length" Id="{f9ab0fc7-6034-4372-87d7-8ead9a6e691c}">
+      <Declaration><![CDATA[PROPERTY Length : UDINT]]></Declaration>
+      <Get Name="Get" Id="{a4200f6c-b58b-48e1-857f-aee972d8d68f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Length := _currentLength;]]></ST>
+        </Implementation>
+      </Get>
+      <Set Name="Set" Id="{bfa0876b-e475-4546-b2fd-c73f093a74a2}">
+        <Declaration><![CDATA[]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[_currentLength := Length;]]></ST>
+        </Implementation>
+      </Set>
+    </Property>
+    <Property Name="StringPointer" Id="{d30c913a-63ac-4fce-87e4-9296bb47ba86}">
+      <Declaration><![CDATA[PROPERTY StringPointer : POINTER TO BYTE]]></Declaration>
+      <Get Name="Get" Id="{b0463481-0e33-474a-b2b0-403f089bbd65}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[StringPointer := _dataBufferAdd; ]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ToString" Id="{14c21fa1-a7bc-4c30-9754-002c8e4f7e18}">
+      <Declaration><![CDATA[PROPERTY ToString : STRING(255)]]></Declaration>
+      <Get Name="Get" Id="{338ff9f4-6df7-4e86-b701-a5f1f679b1dc}">
+        <Declaration><![CDATA[VAR_INST
+	s255String : STRING(255);
+	length : UDINT;
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[s255String := '';
+length := MIN(_currentLength, DINT_TO_UDINT(SIZEOF(s255String)));
+MEMCPY(ADR(s255String), _dataBufferAdd, length);
+ToString := s255String;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ToStringEnding" Id="{361709f6-d66f-443b-9ed2-65397681654c}">
+      <Declaration><![CDATA[PROPERTY ToStringEnding : STRING(255)]]></Declaration>
+      <Get Name="Get" Id="{878ee556-cb6b-4d13-a15c-724360e2c0ed}">
+        <Declaration><![CDATA[VAR_INST
+	s255String : STRING(255);
+	length : UDINT;
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[s255String := '';
+length := 255;
+IF _currentLength > 255 THEN
+	MEMCPY(ADR(s255String), _dataBufferAdd+_currentLength-length, length);
+ELSE
+	s255String := 'Length less than 255'; 
+END_IF
+ToStringEnding := s255String;]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <LineIds Name="FB_StringBuilder">
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StringBuilder.Append">
+      <LineId Id="20" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="30" Count="0" />
+      <LineId Id="29" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StringBuilder.AppendGeneric">
+      <LineId Id="18" Count="0" />
+      <LineId Id="20" Count="1" />
+      <LineId Id="19" Count="0" />
+      <LineId Id="12" Count="5" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StringBuilder.AppendLine">
+      <LineId Id="5" Count="0" />
+      <LineId Id="8" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StringBuilder.BufferSize.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StringBuilder.Clear">
+      <LineId Id="5" Count="0" />
+      <LineId Id="9" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StringBuilder.GetIndexOf">
+      <LineId Id="12" Count="1" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="90" Count="0" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="91" Count="1" />
+      <LineId Id="23" Count="1" />
+      <LineId Id="73" Count="0" />
+      <LineId Id="25" Count="0" />
+      <LineId Id="44" Count="0" />
+      <LineId Id="59" Count="0" />
+      <LineId Id="47" Count="0" />
+      <LineId Id="60" Count="1" />
+      <LineId Id="48" Count="0" />
+      <LineId Id="63" Count="1" />
+      <LineId Id="49" Count="2" />
+      <LineId Id="65" Count="1" />
+      <LineId Id="45" Count="0" />
+      <LineId Id="68" Count="0" />
+      <LineId Id="67" Count="0" />
+      <LineId Id="69" Count="0" />
+      <LineId Id="71" Count="1" />
+      <LineId Id="70" Count="0" />
+      <LineId Id="26" Count="17" />
+      <LineId Id="10" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StringBuilder.Initialize">
+      <LineId Id="6" Count="1" />
+      <LineId Id="5" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StringBuilder.Length.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StringBuilder.Length.Set">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StringBuilder.StringPointer.Get">
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StringBuilder.ToString.Get">
+      <LineId Id="3" Count="2" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+    <LineIds Name="FB_StringBuilder.ToStringEnding.Get">
+      <LineId Id="3" Count="1" />
+      <LineId Id="10" Count="0" />
+      <LineId Id="5" Count="0" />
+      <LineId Id="12" Count="1" />
+      <LineId Id="11" Count="0" />
+      <LineId Id="2" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

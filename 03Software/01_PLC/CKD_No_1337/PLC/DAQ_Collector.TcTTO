@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <Task Name="DAQ_Collector" Id="{94ae4d51-003b-478d-8575-37d238781d5c}">
+    <!--CycleTime in micro seconds.-->
+    <CycleTime>10000</CycleTime>
+    <Priority>3</Priority>
+    <PouCall>
+      <Name>P_InfluxDataCollector</Name>
+    </PouCall>
+    <TaskFBGuid>{478d876c-9718-4dad-8aa6-dd5e7c4b3a9d}</TaskFBGuid>
+    <Fb_init>{ed0dc4c9-196c-47b9-a5f8-ee4194a37bcc}</Fb_init>
+    <Fb_exit>{2ee20327-9185-41af-a723-98fe017de005}</Fb_exit>
+    <CycleUpdate>{fd9f1b32-6e60-43c7-afd8-21bf3eba8106}</CycleUpdate>
+    <PostCycleUpdate>{ee64a8ea-cbed-486f-b881-00a399453a09}</PostCycleUpdate>
+  </Task>
+</TcPlcObject>

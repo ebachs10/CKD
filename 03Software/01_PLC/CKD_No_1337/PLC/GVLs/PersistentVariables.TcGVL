@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <GVL Name="PersistentVariables" Id="{21732883-886e-462e-9c7a-f5baffa94e47}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	HourCounters		: ST_HOUR_COUNTERS;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>

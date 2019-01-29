@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <DUT Name="ST_DATA" Id="{8aa5c731-d1b0-4538-8dcc-b585f37b5e52}">
+    <Declaration><![CDATA[TYPE ST_DATA :
+STRUCT
+	Timing				: ST_PlcTiming;
+	JetsonTx2			: ST_JetsonTx2;
+	Sick				: ST_SICK;
+	Gps					: ST_Gps;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

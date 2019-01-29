@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="P_InfluxDatabaseWriter" Id="{51cfc44b-9173-4a49-8914-2b4985a65a2e}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_InfluxDatabaseWriter
+VAR
+	Data : REFERENCE TO FB_InfluxDataCollector := P_InfluxDataCollector.InfluxData; 	
+
+	Sender : FB_InfluxDataSender; 
+	
+	WriteSucces : BOOL; 
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[(* This Sender Program Should be run at 10ms ScanTime in seperate task (can be same CPU) from DataCollector *)
+
+IF Main.EmulatedState = E_EmulatedState.PhysicalPlant THEN
+	Sender(	Data				:= Data,
+			Ip					:= '10.10.0.122',
+			Port				:= 8086,
+			GlobalWriteSucces 	=> WriteSucces); 
+ELSIF Main.EmulatedState = E_EmulatedState.VirtualPlant THEN
+	Sender(	Data				:= Data,
+			Ip					:= '127.0.0.1',
+			Port				:= 8086,
+			GlobalWriteSucces 	=> WriteSucces); 	
+
+END_IF
+
+
+
+// =============== Read Values from Influxdb]]></ST>
+    </Implementation>
+    <LineIds Name="P_InfluxDatabaseWriter">
+      <LineId Id="21" Count="0" />
+      <LineId Id="36" Count="0" />
+      <LineId Id="22" Count="0" />
+      <LineId Id="9" Count="0" />
+      <LineId Id="23" Count="1" />
+      <LineId Id="27" Count="0" />
+      <LineId Id="37" Count="0" />
+      <LineId Id="41" Count="2" />
+      <LineId Id="38" Count="0" />
+      <LineId Id="40" Count="0" />
+      <LineId Id="39" Count="0" />
+      <LineId Id="53" Count="2" />
+      <LineId Id="52" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>

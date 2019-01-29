@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <POU Name="P_UpdateDAQ" Id="{13022e4a-c811-4e4c-a6ff-ab4bc1d8f568}" SpecialFunc="None">
+    <Declaration><![CDATA[PROGRAM P_UpdateDAQ
+VAR_IN_OUT
+	Data	: ST_DATA;
+END_VAR
+VAR
+	DataDaq : ST_DATA;
+END_VAR]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[DataDaq := Data;]]></ST>
+    </Implementation>
+    <LineIds Name="P_UpdateDAQ">
+      <LineId Id="5" Count="0" />
+    </LineIds>
+  </POU>
+</TcPlcObject>
