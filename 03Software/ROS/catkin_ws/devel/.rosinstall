@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/nvidia/workspace/CKD1/03Software/ROS/catkin_ws/devel/setup.sh
