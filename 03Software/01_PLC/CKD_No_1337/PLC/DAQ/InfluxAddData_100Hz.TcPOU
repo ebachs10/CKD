@@ -10,7 +10,7 @@ END_VAR
 ]]></Declaration>
     <Implementation>
       <ST><![CDATA[// =================== Test
-	DataCollector.AddBool(	'Test64',                                    Data.Gps.Inputs.x);
+	DataCollector.Addlreal(	'Test64',                                    Data.Gps.Inputs.x);
 	
 				]]></ST>
     </Implementation>

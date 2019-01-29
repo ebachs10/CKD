@@ -19,9 +19,9 @@ END_VAR]]></Declaration>
 RunTimers(); 
 
 // ========= Initialize Data
-	InfluxData.Initialize( 	HostName 		:= 'TLU',			// <<---- 	Change to Descriptive MachinePLC name, eg: MachinePLC_TLU 
+	InfluxData.Initialize( 	HostName 		:= 'MachinePLC',			// <<---- 	Change to Descriptive MachinePLC name, eg: MachinePLC_TLU 
 							Database 		:= 'RD',			// <<---- 	Change to Database name. Needs to be setup beforehand.
-							Measurement 	:= 'FlenderB2B');	// <<---- 	Measurentname in database. Eg: LORCHALT
+							Measurement 	:= 'CKD_Test');	// <<---- 	Measurentname in database. Eg: LORCHALT
 // ========= Add Data tags.
 // These are written to each "point" i.e. for each ms.
 // Add eg: Current State of TestBench - for easy search later on

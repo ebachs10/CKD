@@ -12,6 +12,9 @@ VAR_GLOBAL
 	Gui					: ST_GUI_HMI; 
 	
 	HourCounters		: ST_HOUR_COUNTERS;
+	
+	// Temp
+	MyBoolVariable		: BOOL;
 END_VAR]]></Declaration>
   </GVL>
 </TcPlcObject>
