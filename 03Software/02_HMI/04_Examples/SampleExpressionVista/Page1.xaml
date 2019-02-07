@@ -1,0 +1,43 @@
+﻿<Page x:Class="Machine.Page1"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Page1"
+    Width="Auto" Loaded="Load" Unloaded="Close" xmlns:d="http://schemas.microsoft.com/expression/blend/2006" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d"
+    >
+	<Page.Background>
+		<LinearGradientBrush EndPoint="0.498,1.18" StartPoint="0.502,-0.18">
+			<GradientStop Color="#FF1A1919" Offset="0"/>
+			<GradientStop Color="#FF686767" Offset="0.986"/>
+		</LinearGradientBrush>
+	</Page.Background>
+	<Viewbox>
+		<Grid Width="Auto" Height="Auto" Margin="5,5,5,10">
+        
+			<Label HorizontalAlignment="Center" Margin="0,2,0,0" VerticalAlignment="Top" Width="Auto" Height="Auto" FontSize="18" FontWeight="Bold" Foreground="#FFFFFFFF" Content="Machine"/>
+			<GroupBox d:LayoutOverrides="Height" HorizontalAlignment="Stretch" Margin="135.953,92.08,8,0" x:Name="grpSpeed" VerticalAlignment="Top" Width="117.047" Height="52.96" BorderThickness="0.5,0.5,0.5,0.5" Foreground="#FFFFFFFF" Header="Speed">
+				<Grid HorizontalAlignment="Stretch" Margin="0,0,0,0" VerticalAlignment="Stretch" Width="Auto" Height="Auto">
+					<RadioButton d:LayoutOverrides="Width, Height" HorizontalAlignment="Right" Margin="43.297,0,8,0" x:Name="optSpeedSlow" VerticalAlignment="Center" Width="Auto" Height="Auto" Foreground="#FFFFFFFF" Content="slow" Click="optSpeedSlow_Click"/>
+					<RadioButton d:LayoutOverrides="Height" HorizontalAlignment="Left" Margin="8,0,0,0" x:Name="optSpeedFast" VerticalAlignment="Center" Width="Auto" Height="Auto" Foreground="#FFFFFFFF" Content="fast" Click="optSpeedFast_Click"/>
+				</Grid>
+			</GroupBox>
+			<ProgressBar HorizontalAlignment="Stretch" Margin="8,0,8,14" x:Name="prgSteps" VerticalAlignment="Bottom" Width="Auto" Height="14"/>
+			<Label HorizontalAlignment="Left" Margin="8,0,0,25.96" x:Name="lblSteps" VerticalAlignment="Bottom" Width="Auto" Height="Auto" Foreground="#FFFFFFFF" Content="Steps:"/>
+			<Label HorizontalAlignment="Left" Margin="8,0,0,-6" x:Name="lbl0Procent" VerticalAlignment="Bottom" Width="Auto" Height="Auto" Foreground="#FFFFFFFF" Content="0%"/>
+			<Label HorizontalAlignment="Right" Margin="0,0,8,-6" x:Name="lbl100Procent" VerticalAlignment="Bottom" Width="Auto" Height="Auto" Foreground="#FFFFFFFF" Content="100%"/>
+			<Rectangle Fill="#01FFFFFF" Stroke="#FFFFFFFF" StrokeThickness="1" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" Margin="8,101,0,46.96" VerticalAlignment="Top" Width="117.047" Height="44.96"/>
+			<Rectangle Fill="#01FFFFFF" Stroke="#FFFFFFFF" StrokeThickness="1" RadiusX="4" RadiusY="4" HorizontalAlignment="Left" Margin="8,42.12,0,0" VerticalAlignment="Top" Width="117.047" Height="44.96"/>
+			<Grid HorizontalAlignment="Left" Margin="8,101,0,46.96" VerticalAlignment="Top" Width="117.047" Height="44.96">
+				<Label d:LayoutOverrides="Width, Height" HorizontalAlignment="Left" Margin="8,0,0,0" x:Name="lblCountLabel" VerticalAlignment="Center" Width="Auto" Height="Auto" Foreground="#FFFFFFFF" Content="Count:"/>
+				<Label d:LayoutOverrides="Height" HorizontalAlignment="Left" Margin="62,0,8,0" x:Name="lblCount" VerticalAlignment="Center" Width="Auto" Height="Auto" Foreground="#FFFFFFFF" Content="0"/>
+			</Grid>
+			<Grid HorizontalAlignment="Left" Margin="8,42.12,0,0" VerticalAlignment="Top" Width="117.047" Height="44.96">
+				<Label HorizontalAlignment="Stretch" Margin="31.477,0,-5.108,2.547" x:Name="lblDeviceDown" VerticalAlignment="Bottom" Height="Auto" Foreground="#FFFFFFFF" Content="Device Down"/>
+				<Label HorizontalAlignment="Stretch" Margin="31.477,1.457,-5.108,0" x:Name="lblDeviceUp" VerticalAlignment="Top" Height="Auto" Foreground="#FFFFFFFF" Content="Device Up"/>
+				<Label d:LayoutOverrides="Width" HorizontalAlignment="Left" Margin="8,20,0,2.547" x:Name="DeviceDown_LED" Width="Auto" FontFamily="Wingdings" FontSize="14" FontWeight="Normal" Foreground="#FFFFFFFF" Content="ê" VerticalAlignment="Stretch"/>
+				<Label HorizontalAlignment="Left" Margin="8,0,0,0" x:Name="DeviceUp_LED" VerticalAlignment="Top" Width="Auto" FontFamily="Wingdings" FontSize="14" Foreground="#FFFFFFFF" Content="é"/>
+			</Grid>
+			<Image d:LayoutOverrides="HorizontalAlignment" HorizontalAlignment="Left" Margin="135.047,44.832,0,0" x:Name="imgLogo" VerticalAlignment="Top" Width="114.953" Height="38.984" Source="Logo_NAT_white_2Z_250x110.PNG" Stretch="Fill"/>
+        
+		</Grid>
+	</Viewbox>
+</Page>

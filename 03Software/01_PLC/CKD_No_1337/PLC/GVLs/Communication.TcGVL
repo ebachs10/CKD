@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4022.11">
+  <GVL Name="Communication" Id="{ed0519df-0bf8-48cc-8aa2-1968b375cde1}">
+    <Declaration><![CDATA[{attribute 'qualified_only'}
+VAR_GLOBAL
+	ToHmi				: ST_TO_HMI;
+	
+	FromHmi				: ST_FROM_HMI;
+	
+	Parameters 			: ST_PARAMETERS_HMI;
+
+	Gui					: ST_GUI_HMI; 
+	
+	HourCounters		: ST_HOUR_COUNTERS;
+	
+	// Temp
+	MyBoolVariable		: BOOL;
+END_VAR]]></Declaration>
+  </GVL>
+</TcPlcObject>
