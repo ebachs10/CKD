@@ -33,9 +33,6 @@ namespace Ckd.No1337
     public RelayCommand(Action action)
     {
       mAction = action;
-
-
-
     }
 
     #endregion
@@ -52,7 +49,7 @@ namespace Ckd.No1337
 
     public void Execute(object parameter)
     {
-      throw new NotImplementedException();
+      mAction();
     }
   }
 }
