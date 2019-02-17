@@ -50,9 +50,7 @@
                                         
                                         <!-- Title Bar -->
                                         <RowDefinition Height="{Binding TitleHeightGridLength, FallbackValue=42}" />
-                                        
-                                        <!-- Drop shadow-->
-                                        <RowDefinition Height="Auto" />
+                                       
                                         
                                         <!-- Window Content -->
                                         <RowDefinition Height="*" />
@@ -92,31 +90,10 @@
 
                                         </StackPanel>
                                         
-                                    </Grid>
-                                    
-                                    <!-- Drio shadow-->
-                                    <Border Grid.Row="1" Height="6" BorderThickness="0 0.2 0 0">
-                                        <!--Underline-->
-                                        <Border.BorderBrush>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1, 0">
-                                                <GradientStop Color="{StaticResource ForgroundLight}" Offset="0.0" />
-                                                <GradientStop Color="{StaticResource ForgroundMain}" Offset="0.5" />
-                                                <GradientStop Color="{StaticResource ForgroundLight}" Offset="1.0" />
-                                            </LinearGradientBrush>
-                                        </Border.BorderBrush>
-                                        
-                                        <!-- Drop shadow -->
-                                        <Border.Background>
-                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0, 1">
-                                                <GradientStop Color="{StaticResource BackgroundVeryLight}" Offset="0.0" />
-                                                <GradientStop Color="{StaticResource ForgroundLight}" Offset="1.0" />
-                                            </LinearGradientBrush>
-                                        </Border.Background>
-                                        
-                                    </Border>
+                                    </Grid>                                   
                                     
                                     <!-- Page Content -->
-                                    <Border Grid.Row="2" Padding="{Binding InnerContentPadding}">
+                                    <Border Grid.Row="1" Padding="{Binding InnerContentPadding}">
                                         <ContentPresenter Content="{TemplateBinding Content}" />
                                     </Border>
                                     
@@ -143,5 +120,6 @@
     </WindowChrome.WindowChrome>
 
     <Grid Background="{StaticResource ForgroundLightBrush}">
+        <Frame x:Name="MainFrame" Content="{Binding CurrentPage, Converter={local:ApplicationPageValueConverter}}" />
     </Grid>
 </Window>
